@@ -11,7 +11,8 @@ headings <- c("Browse the Indiana catalog", "Record a sighting", "Review and fil
 for (heading in headings) if (!any(grepl(paste0("^## ", heading, "$"), guide))) stop("Missing guide heading: ", heading)
 for (id in grep("stable_ids", contract, value = TRUE)) {
   ids <- sub(".*stable_ids:[[:space:]]*", "", id)
-  ids <- gsub("[\\[\\]]", "", ids)
+  ids <- gsub("[", "", ids, fixed = TRUE)
+  ids <- gsub("]", "", ids, fixed = TRUE)
   ids <- trimws(unlist(strsplit(ids, ",")))
   for (stable_id in ids) if (!any(grepl(stable_id, inventory, fixed = TRUE))) stop("Inventory is missing stable ID: ", stable_id)
 }
