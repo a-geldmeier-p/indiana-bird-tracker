@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import difflib
 import json
 import os
 import subprocess
@@ -63,6 +64,48 @@ def normalize_patch(patch: str) -> str:
     if patch.endswith("```"):
         patch = patch[:-3].rstrip()
     return patch.strip()
+
+
+def contents_to_patch(files: dict[str, str]) -> str:
+    chunks = []
+    for name, new_text in files.items():
+        path = Path(name)
+        old_text = path.read_text(encoding="utf-8") if path.exists() else ""
+        if old_text == new_text:
+            continue
+        diff = difflib.unified_diff(
+            old_text.splitlines(True),
+            new_text.splitlines(True),
+            fromfile=f"a/{name}" if path.exists() else "/dev/null",
+            tofile=f"b/{name}",
+            lineterm="\n",
+        )
+        body = "".join(diff)
+        if body:
+            chunks.append(f"diff --git a/{name} b/{name}\n{body}")
+    return "\n".join(chunks)
+
+
+def request_file_contents(api_key: str, repository: str, pr_number: str, context: str, diff: str) -> str:
+    prompt = f"""You are documenting {repository}, PR #{pr_number}.
+Return ONLY a JSON object with this exact shape: {{\"files\": {{\"README.md\": \"full text\", \"NEWS.md\": \"full text\", \"USER_GUIDE.md\": \"full text\", \"WORKFLOW_INVENTORY.md\": \"full text\"}}}}.
+Include only files that need truthful updates. The values must be complete replacement file contents, not diffs.
+Also include complete updated Roxygen source files or tests only when required by the PR, using their repository paths as keys.
+Do not invent features, links, videos, screenshots, or test results.
+PR diff:\n{diff}\nCurrent files:\n{context}"""
+    raw = request_patch(api_key, prompt)
+    start = raw.find("{")
+    end = raw.rfind("}")
+    if start < 0 or end <= start:
+        raise SystemExit("Documentation agent did not return structured file contents.")
+    try:
+        payload = json.loads(raw[start : end + 1])
+        files = payload.get("files", {})
+        if not isinstance(files, dict):
+            raise ValueError("files must be an object")
+        return contents_to_patch({str(k): str(v) for k, v in files.items()})
+    except (json.JSONDecodeError, ValueError) as error:
+        raise SystemExit(f"Documentation agent returned invalid structured content: {error}") from error
 
 
 def main() -> None:
@@ -139,15 +182,17 @@ Patch:
             patch = request_patch(api_key, repair_prompt)
             repaired = subprocess.run(["git", "apply", "--check"], input=patch, text=True, capture_output=True)
             if repaired.returncode:
-                # Never let an untrusted model response break the PR.  Returning an
-                # empty patch lets deterministic checks continue; a later run can
-                # retry documentation generation with the same PR diff.
-                print(
-                    "Documentation agent patch was invalid; skipping this run. "
-                    f"git apply error: {repaired.stderr.strip()}",
-                    file=sys.stderr,
+                patch = request_file_contents(
+                    api_key, args.repository, args.pr_number, context, read_text(args.diff)
                 )
-                patch = ""
+                rebuilt = subprocess.run(
+                    ["git", "apply", "--check"], input=patch, text=True, capture_output=True
+                )
+                if rebuilt.returncode:
+                    raise SystemExit(
+                        "Documentation agent could not produce a valid patch after "
+                        f"structured retry:\n{rebuilt.stderr}"
+                    )
     args.output.write_text(patch + ("\n" if patch else ""), encoding="utf-8")
 
 
