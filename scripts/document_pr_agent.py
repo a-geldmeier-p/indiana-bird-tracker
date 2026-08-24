@@ -48,6 +48,10 @@ def request_patch(api_key: str, prompt: str) -> str:
 def normalize_patch(patch: str) -> str:
     """Remove model prose/fences while preserving a complete git patch."""
     patch = patch.replace("\\r\\n", "\\n").strip()
+    if patch.startswith("*** Begin Patch"):
+        patch = patch[len("*** Begin Patch") :].strip()
+        if patch.endswith("*** End Patch"):
+            patch = patch[: -len("*** End Patch")].rstrip()
     if "```" in patch:
         blocks = patch.split("```")
         fenced = [block for block in blocks if "diff --git " in block]
@@ -124,7 +128,9 @@ Rules:
         check = subprocess.run(["git", "apply", "--check"], input=patch, text=True, capture_output=True)
         if check.returncode:
             repair_prompt = f"""Repair this proposed unified git patch so `git apply --check` accepts it.
-Return ONLY the corrected patch, with valid diff headers and hunk line counts.
+Return ONLY a standard git unified patch beginning with `diff --git`.
+Do not use `*** Begin Patch`, `*** End Patch`, Markdown fences, or prose.
+Include complete `---`, `+++`, and valid hunk line counts for every changed file.
 Git error:
 {check.stderr}
 Patch:
