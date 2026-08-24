@@ -18,7 +18,7 @@ This inventory is the human-readable contract for later Playwright tests and aut
 
 - Open **Record sighting** (`main-navigation`, value `record`).
 - Choose **Species** (`record-species_code`).
-- Set **Observation date** and **Observation time** (`record-observation_date`, `record-observation_time`).
+- Set **Observation date** (`record-observation_date`) and **Observation time** (`record-observation_time`).
 - Enter required **Location** and **Indiana county** (`record-location`, `record-county`).
 - Optionally upload a supported image (`record-photo_upload`) or enter a path/URL (`record-photo_reference`).
 - After choosing a species, confirm the compact catalog reference preview appears; this is separate from the optional user upload.
@@ -46,3 +46,11 @@ This inventory is the human-readable contract for later Playwright tests and aut
 ## Suggested browser-test fixture
 
 Each test run should use a new temporary DuckDB path and photo-library directory, call `initialize_bird_db()`, and add only the sightings and tiny image fixtures the test owns. This makes counts deterministic, avoids modifying a person's real data, and allows fixtures to be removed after the app and connection close. Include one valid image, one renamed non-image, two same-ID copies to exercise collision handling, and one intentionally missing managed path.
+
+## 5. Repository pull-request workflows
+
+- `.github/workflows/self-documenting-pr.yml` runs automatically for pull requests that are opened, synchronized, or reopened, and can also be started with `workflow_dispatch`.
+- The workflow validates the pull request head repository, checks out the head revision, and runs an application preflight that installs the package, runs local `testthat` tests, and performs the Shiny smoke check.
+- After preflight, the documentation job obtains the pull-request diff, asks the documentation agent for an allow-listed patch, and checks that patch before applying it.
+- The manual-dispatch path uses the supplied pull-request number; pull-request events use the event's pull-request number.
+- The former `.github/workflows/pr-check.yml` workflow has been removed; its application installation, test, and Shiny smoke-check commands are now part of the self-documenting workflow's preflight job.
