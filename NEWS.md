@@ -9,6 +9,7 @@
 - Added local reference-photo mapping, managed sighting-photo uploads, and a fixed three-column sighting-photo grid.
 - Fixed Windows path normalization so valid uploaded photos display from the managed library.
 - Updated the self-documenting pull-request workflow to run on selected pull-request events, separate application preflight checks from documentation, and use the pull-request number for both automatic and manually dispatched runs.
+- Updated workflow dependency setup to install `pak` from the configured R package repository.
 
 ## Future maintenance
 

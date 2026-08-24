@@ -1,138 +1,111 @@
-# GitHub self-documenting agent workflow
+# Self-documenting pull requests: complete runbook
 
-This document describes the future automation for Indiana Bird Tracker. It is a design and implementation checklist; the local MVP does not enable GitHub, LLM, or Playwright automation yet.
+This document explains what happens after a pull request (PR) is opened in Indiana Bird Tracker, why each stage exists, what it needs, and how to diagnose it. The automation can update documentation, tests, and Roxygen, but it never merges a PR or changes application behavior on its own.
 
-## Desired PR flow
+## What must already be configured
 
-```text
-Developer PR
-    |
-    v
-Deterministic validation ----> Roxygen / tests / Shiny smoke check
-    |
-    v
-Bounded documentation agent -> README, NEWS, USER_GUIDE, workflow inventory
-    |
-    v
-Playwright MCP request ------> browser workflow videos and screenshots
-    |
-    v
-Bot commit to PR branch ----> checks rerun
-    |
-    v
-Assign human reviewer --------> developer reviews and merges
-```
+1. The `Self-documenting PR` workflow is on the default branch.
+2. A repository secret named `OPENAI_API_KEY` contains a valid OpenAI project key.
+3. Branch protection requires pull requests and the current workflow checks.
+4. GitHub Actions is enabled.
+5. R 4.4.3-compatible dependencies are available from the configured RSPM.
 
-## Recommended repository layout
+The current workflow performs the OpenAI documentation phase. Playwright video recording is a separate phase and is not active until its job and adapter have been tested successfully.
+
+## Complete PR sequence
 
 ```text
-.github/
-  workflows/
-    pr-check.yml                 # deterministic checks on every PR
-    self-documenting-pr.yml      # bounded agent job, opt-in/manual first
-  CODEOWNERS                     # assigns the human reviewer
-  agents/
-    documentation-policy.yml     # allowed files, limits, required checks
-    workflow-contract.yml        # four workflows and stable IDs
-docs/
-  GITHUB_SELF_DOCUMENTING_AGENT.md
-  agent-prompts/
-    document-pr.md               # versioned prompt template
-  playwright/
-    manifest.yml                 # workflow -> video artifact mapping
-    README.md                    # MCP adapter contract
-scripts/
-  check_docs.R                   # links, headings, placeholder validation
-  update_news.R                  # deterministic NEWS entry helper
-  update_workflow_inventory.R
+PR opened or updated
+  -> validate-pr: identify the exact commit and reject fork write attempts
+  -> preflight: install R, run tests, and smoke-test Shiny
+  -> document: send the PR diff and documentation context to OpenAI
+  -> validate and apply the bounded patch
+  -> roxygen, R CMD check, tests, documentation checks, and Shiny smoke test
+  -> commit only approved generated files and push to the PR branch
+  -> checks rerun; a human reviews and merges
 ```
 
-## 1. Trigger and permissions
+## 1. Opening or updating a PR
 
-Start with `workflow_dispatch` and a trusted-branch `pull_request` trigger. Do not run write-capable automation on untrusted fork code with `pull_request_target`. Use a dedicated bot branch or the PR head branch only after checking out the exact PR commit.
+Opening a PR, pushing another commit to its branch, or reopening it triggers the workflow. GitHub supplies the PR number; the workflow obtains the exact head branch and commit so the agent documents the code actually under review.
 
-The job should request the minimum permissions:
+For a forked PR, the workflow must not push to the fork. It should upload a patch artifact or ask the author to apply the changes. This protects repository secrets from untrusted fork code.
 
-```yaml
-permissions:
-  contents: write       # only needed for the bot commit
-  pull-requests: write  # comment and assign reviewer
-  checks: read
-```
+## 2. `validate-pr`
 
-Keep the LLM/API and Playwright MCP credentials in GitHub environment secrets. Never pass repository code, tokens, or user-uploaded photos to an external service by default.
+This job uses GitHub's API to verify the PR and record its head branch. It does not run the app or call OpenAI. If it fails, check the PR number, repository name, and whether the PR comes from a fork. Do not bypass this protection by granting write access to untrusted code.
 
-## 2. Two-phase deterministic validation
+## 3. `preflight`
 
-The first job must pass before an agent can edit documentation. It checks application behavior, not documentation freshness:
+`preflight` runs on the exact PR commit and is read-only. It installs R 4.4.3 and dependencies, installs the package with `R CMD INSTALL .`, runs `testthat::test_local()`, starts Shiny with temporary database/photo paths, and polls the local URL for HTTP 200.
 
-1. Install the pinned R version and package dependencies.
-2. Run `testthat::test_local()`.
-3. Launch the app with temporary DuckDB/photo/reference paths and check an HTTP 200 response.
+This answers: “Does the application work before the agent changes anything?” The `document` job has `needs: [validate-pr, preflight]`, so it cannot start unless preflight succeeds. If Shiny never returns HTTP 200, inspect the startup log for a wrong app function, port mismatch, missing dependency, or a process that exited immediately.
 
-If preflight fails, comment the failure on the PR and stop. The documentation agent must not “fix” production code while documenting a failed PR. After the agent edits allowed documentation, the post-agent gate runs `R CMD check`, verifies that roxygen creates no additional changes, validates the documentation contract and workflow inventory, and repeats the Shiny smoke check.
+## 4. What the documentation agent receives
 
-## 3. Documentation agent contract
+The agent receives the PR diff from `gh pr diff`, the documentation policy, the current README, NEWS, user guide, workflow inventory, and the versioned prompt in `docs/agent-prompts/document-pr.md`. The API key comes from the `OPENAI_API_KEY` repository secret and is masked in logs.
 
-Give the agent a structured PR summary and the diff, not the entire repository history. The agent may edit only:
+## 5. What the agent may update
 
-- roxygen comments in `R/` and generated `man/` files;
-- `tests/testthat/`;
+The agent must review every relevant area and may update only:
+
+- Roxygen comments in `R/` and generated `man/` files;
+- focused tests in `tests/testthat/` when PR behavior changed;
 - `README.md`, `NEWS.md`, `USER_GUIDE.md`, and `WORKFLOW_INVENTORY.md`;
-- `docs/playwright/manifest.yml` and generated media links.
+- Playwright manifest/media links only when real artifacts exist.
 
-The agent must:
+It may not change application behavior, dependencies, CI workflow definitions, policy files, or invent videos, links, screenshots, features, or test results. Every area is reviewed on every run, but a file changes only when the PR provides a truthful reason to change it.
 
-1. Inventory exported functions changed by the PR and add/update roxygen parameters, return values, examples, and links.
-2. Add non-UI tests for changed data/database behavior and UI-module tests for stable IDs and workflow states.
-3. Update README setup, paths, limitations, and user-visible behavior.
-4. Add one concise dated entry under the current `NEWS.md` development section.
-5. Update the relevant step-by-step section in `USER_GUIDE.md`.
-6. Update `WORKFLOW_INVENTORY.md` if a workflow, label, or input ID changes.
-7. Run roxygenise, tests, documentation checks, and the UI smoke check again.
+## 6. Patch generation and validation
 
-The agent should produce a short PR comment listing files changed, checks run, and any item requiring human review. It must not merge the PR.
+The preferred response is a standard Git unified patch beginning with `diff --git`. The script removes accidental Markdown fences or `*** Begin Patch` wrappers and runs `git apply --check` before applying anything.
 
-## 4. Playwright MCP adapter
+If the first patch is malformed, the script requests a corrected patch. If that is also malformed, it requests complete replacement file contents as structured JSON and generates the unified patch locally. Git validates the locally generated patch before applying it. If both attempts fail, the job fails visibly; it does not pass while pretending documentation was updated. `git apply --whitespace=fix` removes harmless trailing blank-line whitespace while still rejecting structurally corrupt patches.
 
-GitHub Actions should call a small, authenticated adapter rather than embedding MCP protocol logic in the R package. The adapter receives a bounded request such as:
+## 7. Allow-list and post-agent validation
+
+After applying the patch, changed paths are checked against the policy. The workflow then runs `roxygen2::roxygenise()`, verifies generated changes, runs `rcmdcheck::rcmdcheck()`, runs `scripts/check_docs.R`, updates the workflow inventory, and repeats the Shiny smoke test. Any failure prevents a bot commit.
+
+## 8. Bot commit and human review
+
+Only after all post-agent checks pass does the workflow configure its bot identity, commit allow-listed files, and push to the PR branch. That new commit triggers checks again. A human reviews the bot commit and merges according to branch protection. The agent never merges.
+
+## 9. Playwright videos (future phase)
+
+Playwright should run after `document` succeeds, using a temporary Shiny instance, temporary DuckDB, synthetic rows, and temporary photo folders. It should run `catalog`, `record_sighting`, `my_sightings`, and `dashboard`, capture one video and poster per workflow, and upload them as artifacts.
 
 ```json
-{
-  "base_url": "http://127.0.0.1:PORT",
-  "workflows": ["catalog", "record_sighting", "my_sightings", "dashboard"],
-  "artifact_dir": "docs/playwright/artifacts",
-  "commit_sha": "..."
-}
+{"base_url":"http://127.0.0.1:PORT","workflows":["catalog","record_sighting","my_sightings","dashboard"],"artifact_dir":"docs/playwright/artifacts","commit_sha":"CURRENT_COMMIT"}
 ```
 
-The adapter runs only the documented browser steps, captures an MP4 or WebM plus a poster image, and returns a manifest with workflow name, run date, commit, browser version, and artifact paths. It must use temporary local DuckDB/photo/reference directories and synthetic data; never use the developer’s personal database or photos.
+The returned manifest must include workflow ID, commit SHA, browser version, and real artifact paths. If Playwright is unavailable or a video is missing, leave the placeholder unchanged; never fabricate a link.
 
-If MCP access is unavailable, preserve the video placeholder and write a clear PR comment. Do not fabricate a video link.
+## 10. GitHub Pages
 
-## 5. Commit and reviewer handoff
+The Pages workflow publishes the Markdown user guide from trusted `main`. The PR agent edits source Markdown and media references; deployment happens only after merge. A Pages error saying “Get Pages site failed” means Pages has not been enabled with **Settings -> Pages -> Source: GitHub Actions**.
 
-After all checks pass:
+## Troubleshooting
 
-1. Configure the bot identity.
-2. Commit only the generated documentation, tests, roxygen output, and Playwright artifacts to the PR branch.
-3. Push the bot commit to the existing PR branch.
-4. Re-run the full checks on the resulting commit.
-5. Add the repository owner or configured maintainer through `CODEOWNERS`/GitHub reviewer assignment.
-6. Comment a concise summary and leave the PR open for human review.
+**Awaiting approval:** Open **Actions**, open the pending run, choose **Review workflows**, and approve only trusted branches. This commonly occurs on a first run or when a job uses repository secrets.
 
-If the branch is protected or the PR comes from a fork, upload a patch artifact and ask the author to apply it instead of attempting a write. This avoids granting write access to untrusted code.
+**Agent does not start:** Confirm `preflight` passed, `document` declares `needs: [validate-pr, preflight]`, and `OPENAI_API_KEY` exists as a repository secret.
 
-## 6. GitHub Pages publishing
+**API returns 401:** Create a new OpenAI project key and update the repository secret. Never paste the key into an issue, log, or chat.
 
-Publish `USER_GUIDE.md` through a small documentation site (for example, MkDocs or Quarto) from a trusted `main`-branch workflow. The PR agent should update source Markdown and media references only; a separate Pages workflow builds and deploys the site after merge.
+**Patch is corrupt:** Read the final `git apply` error. The script performs a repair request and structured-content fallback; do not force-apply a failed patch.
+
+**Checks are duplicated or stuck as Expected:** Remove stale check names from branch protection and add the exact job names from the current `Self-documenting PR` workflow.
+
+**Bot cannot push:** For protected or fork branches, upload a patch artifact and ask the PR author to apply it instead of weakening protection.
 
 ## Acceptance checklist
 
-- [ ] PR preflight is deterministic and read-only.
-- [ ] Agent edits are allow-listed and bounded.
-- [ ] Roxygen, tests, README, NEWS, user guide, and workflow inventory are all checked.
-- [ ] Playwright MCP uses temporary data and returns a manifest or an explicit unavailable result.
-- [ ] Generated artifacts are reviewed before commit.
-- [ ] Bot commits only after checks pass.
-- [ ] A human reviewer is assigned; the agent never merges.
+- [ ] `validate-pr` passes.
+- [ ] `preflight` passes before the agent starts.
+- [ ] The agent receives the PR diff and current documentation context.
+- [ ] Roxygen, focused tests, README, NEWS, user guide, and inventory are reviewed.
+- [ ] The patch is validated and allow-listed.
+- [ ] Post-agent checks pass.
+- [ ] No fake video or poster links are created.
+- [ ] The bot commit is reviewed by a human.
+- [ ] The agent leaves the PR open and never merges it.
