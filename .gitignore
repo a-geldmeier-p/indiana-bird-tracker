@@ -1,0 +1,11 @@
+.Rproj.user/
+.Rhistory
+*.Rcheck/
+*.tar.gz
+bird_tracker.duckdb
+bird_tracker.duckdb.wal
+photos/
+reference-photos/
+work/
+docs/playwright/artifacts/*
+!docs/playwright/artifacts/.gitkeep

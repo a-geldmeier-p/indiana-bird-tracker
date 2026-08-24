@@ -1,0 +1,11 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^dev$
+^README\.Rmd$
+^work$
+^outputs$
+^indianabirdtracker\.Rcheck$
+^indianabirdtracker_.*\.tar\.gz$
+^bird_tracker\.duckdb$
+^photos$
+^reference-photos$

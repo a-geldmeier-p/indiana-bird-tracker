@@ -1,0 +1,20 @@
+allowed_paths:
+  - R/**
+  - man/**
+  - tests/testthat/**
+  - README.md
+  - NEWS.md
+  - USER_GUIDE.md
+  - WORKFLOW_INVENTORY.md
+  - docs/playwright/manifest.yml
+  - docs/playwright/artifacts/**
+forbidden_paths:
+  - DESCRIPTION
+  - NAMESPACE
+  - .github/workflows/**
+required_checks:
+  - R CMD check
+  - testthat::test_local()
+  - roxygen2::roxygenise()
+  - scripts/check_docs.R
+never_merge: true

@@ -1,0 +1,38 @@
+Package: indianabirdtracker
+Title: A Personal Indiana Birding Tracker
+Version: 0.0.1.9000
+Authors@R:
+    person("Personal", "Birder", role = c("aut", "cre"),
+           email = "birder@example.com")
+Description: A small golem-style Shiny application for browsing an Indiana
+    bird catalog, recording personal sightings in DuckDB, and reviewing a
+    personal birding dashboard.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Depends:
+    R (>= 4.1.0)
+Imports:
+    DBI,
+    duckdb,
+    golem,
+    shiny
+Collate:
+    'app_config.R'
+    'photo_library.R'
+    'reference_birds.R'
+    'reference_photo_library.R'
+    'species_seed.R'
+    'db.R'
+    'mod_dashboard.R'
+    'mod_species.R'
+    'mod_record.R'
+    'mod_sightings.R'
+    'app_ui.R'
+    'app_server.R'
+    'run_app.R'
+Suggests:
+    testthat (>= 3.0.0),
+    withr
+Config/testthat/edition: 3
+Config/roxygen2/version: 8.1.0

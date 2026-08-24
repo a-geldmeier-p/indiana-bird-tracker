@@ -1,0 +1,15 @@
+version: 1
+artifact_root: docs/playwright/artifacts
+workflows:
+  - id: catalog
+    guide_heading: Browse the Indiana catalog
+    video_placeholder: "<!-- VIDEO PLACEHOLDER: Catalog browsing and filtering (Playwright recording) -->"
+  - id: record_sighting
+    guide_heading: Record a sighting
+    video_placeholder: "<!-- VIDEO PLACEHOLDER: Recording a sighting with a photo (Playwright recording) -->"
+  - id: my_sightings
+    guide_heading: Review and filter My Sightings
+    video_placeholder: "<!-- VIDEO PLACEHOLDER: Filtering and reviewing My Sightings (Playwright recording) -->"
+  - id: dashboard
+    guide_heading: View the dashboard
+    video_placeholder: "<!-- VIDEO PLACEHOLDER: Dashboard overview (Playwright recording) -->"

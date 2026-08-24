@@ -1,0 +1,56 @@
+name: Self-documenting PR
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Open PR number
+        required: true
+        type: string
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+jobs:
+  document:
+    if: github.event.pull_request.head.repo.fork == false || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: self-documenting
+    steps:
+      - name: Guard required secrets
+        env:
+          DOC_AGENT_URL: ${{ secrets.DOC_AGENT_URL }}
+          PLAYWRIGHT_ADAPTER_URL: ${{ secrets.PLAYWRIGHT_ADAPTER_URL }}
+        run: test -n "$DOC_AGENT_URL" && test -n "$PLAYWRIGHT_ADAPTER_URL"
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: r-lib/actions/setup-r@v2
+        with: { r-version: '4.4.3' }
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with: { extra-packages: 'any::roxygen2, any::testthat' }
+      - name: Preflight must have passed
+        run: echo "Invoke only after the PR checks are green; the adapter must independently reject a failing PR."
+      - name: Request documentation and Playwright artifacts
+        env:
+          DOC_AGENT_URL: ${{ secrets.DOC_AGENT_URL }}
+          DOC_AGENT_TOKEN: ${{ secrets.DOC_AGENT_TOKEN }}
+          PLAYWRIGHT_ADAPTER_URL: ${{ secrets.PLAYWRIGHT_ADAPTER_URL }}
+          PLAYWRIGHT_ADAPTER_TOKEN: ${{ secrets.PLAYWRIGHT_ADAPTER_TOKEN }}
+        run: |
+          mkdir -p docs/playwright/artifacts
+          curl --fail --request POST "$DOC_AGENT_URL" --header "Authorization: Bearer $DOC_AGENT_TOKEN" --header "Content-Type: application/json" --data @.github/agents/documentation-policy.yml
+          curl --fail --request POST "$PLAYWRIGHT_ADAPTER_URL" --header "Authorization: Bearer $PLAYWRIGHT_ADAPTER_TOKEN" --header "Content-Type: application/json" --data '{"base_url":"http://127.0.0.1:PORT","workflows":["catalog","record_sighting","my_sightings","dashboard"],"artifact_dir":"docs/playwright/artifacts","commit_sha":"'"$GITHUB_SHA"'"}'
+      - name: Enforce allow-list
+        run: |
+          changed=$(git diff --name-only)
+          echo "$changed" | grep -Ev '^(R/|man/|tests/testthat/|README.md$|NEWS.md$|USER_GUIDE.md$|WORKFLOW_INVENTORY.md$|docs/playwright/(manifest.yml|artifacts/))' && exit 1 || true
+      - name: Recheck after generated changes
+        run: |
+          Rscript -e 'roxygen2::roxygenise(); testthat::test_local()'
+          Rscript scripts/check_docs.R
+      - name: Commit documentation only
+        run: |
+          git config user.name 'indiana-bird-tracker-docs[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add R man tests/testthat README.md NEWS.md USER_GUIDE.md WORKFLOW_INVENTORY.md docs/playwright
+          git diff --cached --quiet || git commit -m 'docs: update self-documenting PR artifacts'
+          git push

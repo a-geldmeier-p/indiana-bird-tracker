@@ -1,0 +1,10 @@
+default:
+  golem_name: indianabirdtracker
+  golem_version: 0.0.1.9000
+  app_prod: false
+
+production:
+  app_prod: true
+
+dev:
+  golem_wd: .

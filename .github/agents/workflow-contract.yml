@@ -1,0 +1,13 @@
+workflows:
+  catalog:
+    guide_heading: Browse the Indiana catalog
+    stable_ids: [main-navigation, species-search, species-bird_group, species-status_note, species-filter_catalog, species-reset_filters, species-species_table, species-catalog_status]
+  record_sighting:
+    guide_heading: Record a sighting
+    stable_ids: [main-navigation, record-species_code, record-observation_date, record-observation_time, record-location, record-county, record-photo_upload, record-photo_reference, record-save_sighting, record-save-status]
+  my_sightings:
+    guide_heading: Review and filter My Sightings
+    stable_ids: [main-navigation, sightings-species_code, sightings-county, sightings-use_date_filter, sightings-date_range, sightings-sightings_table, sightings-sighting_photos]
+  dashboard:
+    guide_heading: View the dashboard
+    stable_ids: [main-navigation, dashboard-total-sightings, dashboard-distinct-species, dashboard-recent_sightings]

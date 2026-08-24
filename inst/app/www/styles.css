@@ -1,0 +1,37 @@
+:root { --ink: #19352c; --fern: #28624d; --moss: #dfe9d9; --cream: #f7f4ea; --gold: #dda94b; }
+body { background: var(--cream); color: var(--ink); font-family: "Segoe UI", sans-serif; }
+.navbar { background: var(--ink); border: 0; border-radius: 0; min-height: 72px; }
+.navbar-header { min-width: 235px; }.navbar-brand { min-width: 225px; min-height: 50px; height: auto; white-space: nowrap; padding: 10px 10px 8px; overflow: visible; }
+.navbar-default .navbar-brand, .navbar-default .navbar-nav > li > a { color: #fff; }
+.navbar-default .navbar-nav > .active > a, .navbar-default .navbar-nav > .active > a:hover { background: var(--fern); color: #fff; }
+.app-title { display: block; font-weight: 700; line-height: 1; }
+.app-subtitle { display: block; font-size: 10px; opacity: .75; margin-top: 4px; }
+.hero { background: linear-gradient(120deg, var(--ink), var(--fern)); color: #fff; padding: 28px max(20px, calc((100vw - 1140px)/2)); margin-bottom: 24px; }
+.hero h2 { margin: 0 0 8px; font-weight: 700; }.hero p { margin: 0; opacity: .9; }
+.panel { background: #fff; border: 1px solid #d9dfd5; border-radius: 12px; box-shadow: 0 5px 18px rgba(25,53,44,.07); margin: 0 0 22px; padding: 22px; }
+.filter-panel, .form-panel { max-width: 760px; }.filter-panel { max-width: none; }.metric-grid { display: grid; grid-template-columns: repeat(2,minmax(180px,1fr)); gap: 18px; margin-bottom: 22px; }
+.sightings-filter-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; align-items: end; }
+.sightings-filter-row .form-group { margin-bottom: 0; }
+.date-filter-toggle { padding-top: 25px; }.date-filter-toggle .checkbox { margin: 0; }
+.date-filter-toggle input[type="checkbox"] { appearance: none; width: 44px; height: 24px; border-radius: 24px; background: #b8c3bb; vertical-align: middle; margin: 0 8px 0 0; position: relative; cursor: pointer; transition: background .15s ease; }
+.date-filter-toggle input[type="checkbox"]::after { content: ""; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .15s ease; }
+.date-filter-toggle input[type="checkbox"]:checked { background: var(--fern); }.date-filter-toggle input[type="checkbox"]:checked::after { transform: translateX(20px); }
+.catalog-filter-panel { max-width: none; }.catalog-filter-panel h3 { margin-top: 0; }
+.catalog-filter-row { display: grid; grid-template-columns: minmax(240px, 2fr) minmax(170px, 1fr) minmax(190px, 1fr) auto auto; gap: 12px; align-items: end; }
+.catalog-filter-row .form-group { margin-bottom: 0; }.catalog-filter-row .btn { min-height: 34px; margin-bottom: 15px; white-space: nowrap; }
+.filter-help, .catalog-result-count { color: #5f6f67; font-size: 13px; margin: 10px 0 0; }.catalog-no-match { color: #8a4b27; background: #fff4e8; border: 1px solid #efc69f; border-radius: 8px; padding: 12px; }
+.metric-card { background: var(--moss); border-left: 6px solid var(--gold); border-radius: 12px; padding: 20px; }.metric-card span { display:block; font-size: 15px; }.metric-card strong { display:block; font-size: 38px; line-height: 1.2; }
+.btn-primary { background: var(--fern); border-color: var(--fern); }.source-note, footer { color:#5f6f67; font-size: 13px; } footer { padding: 24px; text-align:center; }
+table { background:#fff; } th { color: var(--ink); }
+.reference-bird-thumbnail { width: 96px; height: 96px; max-width: 100%; max-height: 100%; object-fit: fill; border-radius: 8px; background: var(--moss); display: block; }
+.reference-bird-table { vertical-align: middle; }.reference-bird-table td, .reference-bird-table th { vertical-align: middle; }
+.reference-bird-missing { display: inline-flex; width: 96px; height: 96px; align-items: center; justify-content: center; background: #edf1ea; border-radius: 8px; color: #5f6f67; font-size: 11px; text-align: center; }
+.record-reference-preview { display:flex; align-items:center; gap:12px; margin: -4px 0 14px; color:#5f6f67; font-size:13px; }.record-reference-preview .reference-bird-thumbnail { width:120px; height:120px; }
+.photo-grid { display:grid; grid-template-columns:repeat(3,220px); gap:18px; justify-content:start; }
+.photo-card { border:1px solid #d9dfd5; border-radius:10px; padding:14px; overflow:hidden; }
+.sighting-photo { width:220px; height:220px; max-width:220px; max-height:220px; object-fit:contain; border-radius:8px; background:var(--moss); display:block; }
+.photo-missing { min-height:100px; padding:24px; border:1px dashed #9aa99f; border-radius:8px; color:#5f6f67; }
+@media (max-width: 700px) { .sightings-filter-row { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .catalog-filter-row { grid-template-columns: repeat(2, minmax(180px, 1fr)); }.catalog-filter-row .btn { margin-bottom: 0; } }
+@media (max-width: 900px) { .photo-grid { grid-template-columns: repeat(2,220px); } }
+@media (max-width: 600px) { .metric-grid { grid-template-columns: 1fr; } .hero { padding: 22px 16px; }.catalog-filter-row, .sightings-filter-row { grid-template-columns: 1fr; }.navbar-header { min-width: 0; }.navbar-brand { min-width: 210px; }.photo-grid { grid-template-columns: 1fr; } }
