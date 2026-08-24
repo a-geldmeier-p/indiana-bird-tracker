@@ -27,7 +27,7 @@ Accordingly, this is a complete snapshot of the cited DNR table, not a claim to 
 
 ## Setup and run
 
-See [USER_GUIDE.md](USER_GUIDE.md) for step-by-step workflows and reserved video sections for future browser recordings.
+See the [hosted user guide](https://a-geldmeier-p.github.io/indiana-bird-tracker/) for step-by-step workflows and reserved video sections for future browser recordings. The source is [USER_GUIDE.md](USER_GUIDE.md).
 Release notes are kept in [NEWS.md](NEWS.md); automated pull-request updates are reserved for a later maintenance phase.
 
 Install the package dependencies, then install this package:
