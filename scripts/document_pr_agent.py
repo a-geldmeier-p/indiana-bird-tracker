@@ -96,13 +96,15 @@ The patch must modify only paths allowed by this policy:
 
 Rules:
 - You MUST return a valid unified git patch, and nothing else.
-- The only documentation files you may edit are exactly these four:
+- You may edit only these paths:
   1. README.md — update setup, usage, or behavior notes affected by this PR.
   2. NEWS.md — add one concise entry under the current development heading.
   3. USER_GUIDE.md — update the relevant user-facing workflow instructions.
   4. WORKFLOW_INVENTORY.md — update workflow IDs/steps only when this PR changes them.
-- Do not edit any other files, including R code, tests, CI workflows, policy files,
-  roxygen comments, generated man pages, or Playwright files.
+- 5. Roxygen comments in R source files and the generated man/ files.
+  6. Focused tests under tests/testthat/ that cover behavior changed by this PR.
+- Do not edit application behavior, dependencies, CI workflows, policy files,
+  or Playwright files. Do not add unrelated tests or documentation.
 - Make only changes supported by the PR diff. Do not invent features, links, videos,
   screenshots, or test results. Preserve existing Markdown structure and headings.
 - If a file does not need a truthful update, leave it unchanged. If none need updates,
