@@ -34,7 +34,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
 
-    api_key = os.environ.get("OPENAI_API_KEY")
+    api_key = os.environ.get("OPENAI_API_KEY", "").strip().strip('"').strip("'")
     if not api_key:
         raise SystemExit("OPENAI_API_KEY is required.")
 
