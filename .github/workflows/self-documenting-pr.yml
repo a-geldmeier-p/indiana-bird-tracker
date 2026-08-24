@@ -46,22 +46,17 @@ jobs:
           R CMD INSTALL .
           Rscript -e 'testthat::test_local()'
           Rscript scripts/shiny_smoke.R
-      - name: Guard required secrets
-        env:
-          DOC_AGENT_URL: ${{ secrets.DOC_AGENT_URL }}
-          PLAYWRIGHT_ADAPTER_URL: ${{ secrets.PLAYWRIGHT_ADAPTER_URL }}
-        run: test -n "$DOC_AGENT_URL" && test -n "$PLAYWRIGHT_ADAPTER_URL"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Request allowed documentation edits
         env:
-          DOC_AGENT_URL: ${{ secrets.DOC_AGENT_URL }}
-          DOC_AGENT_TOKEN: ${{ secrets.DOC_AGENT_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GH_TOKEN: ${{ github.token }}
         run: |
           gh pr diff "${{ inputs.pr_number }}" > "$RUNNER_TEMP/pr.diff"
-          jq -n --rawfile policy .github/agents/documentation-policy.yml --rawfile diff "$RUNNER_TEMP/pr.diff" --arg repository "$GITHUB_REPOSITORY" --arg pr_number "${{ inputs.pr_number }}" '{repository: $repository, pr_number: $pr_number, policy: $policy, diff: $diff}' > "$RUNNER_TEMP/document-request.json"
-          curl --fail --request POST "$DOC_AGENT_URL" --header "Authorization: Bearer $DOC_AGENT_TOKEN" --header "Content-Type: application/json" --data @"$RUNNER_TEMP/document-request.json" --output "$RUNNER_TEMP/documentation.patch"
-          test -s "$RUNNER_TEMP/documentation.patch"
-          git apply --whitespace=error "$RUNNER_TEMP/documentation.patch"
+          python scripts/document_pr_agent.py --repository "$GITHUB_REPOSITORY" --pr-number "${{ inputs.pr_number }}" --policy .github/agents/documentation-policy.yml --diff "$RUNNER_TEMP/pr.diff" --output "$RUNNER_TEMP/documentation.patch"
+          test ! -s "$RUNNER_TEMP/documentation.patch" || git apply --whitespace=error "$RUNNER_TEMP/documentation.patch"
       - name: Enforce documentation allow-list
         run: |
           changed=$(git diff --name-only)

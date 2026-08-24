@@ -1,0 +1,106 @@
+"""Ask the OpenAI API for an allow-listed documentation patch for one PR."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+import urllib.error
+import urllib.request
+from pathlib import Path
+
+
+def response_text(payload: dict) -> str:
+    """Extract text from a Responses API JSON response."""
+    parts = []
+    for item in payload.get("output", []):
+        for content in item.get("content", []):
+            if content.get("type") == "output_text":
+                parts.append(content.get("text", ""))
+    return "\n".join(parts).strip()
+
+
+def read_text(path: Path) -> str:
+    return path.read_text(encoding="utf-8")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--repository", required=True)
+    parser.add_argument("--pr-number", required=True)
+    parser.add_argument("--policy", type=Path, required=True)
+    parser.add_argument("--diff", type=Path, required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    args = parser.parse_args()
+
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        raise SystemExit("OPENAI_API_KEY is required.")
+
+    context_paths = [
+        Path("README.md"),
+        Path("NEWS.md"),
+        Path("USER_GUIDE.md"),
+        Path("WORKFLOW_INVENTORY.md"),
+        Path("docs/agent-prompts/document-pr.md"),
+    ]
+    context = "\n\n".join(
+        f"--- {path} ---\n{read_text(path)}"
+        for path in context_paths
+        if path.exists()
+    )
+    prompt = f"""You are the bounded documentation agent for {args.repository}, PR #{args.pr_number}.
+
+Return ONLY a valid unified git patch. Do not use Markdown fences or explanations.
+The patch must modify only paths allowed by this policy:
+--- policy ---
+{read_text(args.policy)}
+--- end policy ---
+
+Rules:
+- Do not change application behavior, dependencies, CI workflows, or configuration.
+- Update documentation and focused tests only when justified by the PR diff.
+- Do not add a video or poster link unless it already exists in the repository.
+- If no allow-listed change is needed, return an empty response.
+
+--- PR diff ---
+{read_text(args.diff)}
+--- end PR diff ---
+
+--- current documentation context ---
+{context}
+--- end context ---
+"""
+    request_body = json.dumps(
+        {
+            "model": "gpt-5.6-luna",
+            "input": prompt,
+            "max_output_tokens": 12000,
+        }
+    ).encode("utf-8")
+    request = urllib.request.Request(
+        "https://api.openai.com/v1/responses",
+        data=request_body,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=120) as response:
+            patch = response_text(json.load(response))
+    except urllib.error.HTTPError as error:
+        detail = error.read().decode("utf-8", errors="replace")
+        raise SystemExit(f"OpenAI API request failed ({error.code}): {detail}") from error
+
+    if patch.startswith("```diff"):
+        patch = patch.removeprefix("```diff").removesuffix("```").strip()
+    if patch.startswith("```"):
+        patch = patch.removeprefix("```").removesuffix("```").strip()
+    args.output.write_text(patch + ("\n" if patch else ""), encoding="utf-8")
+
+
+if __name__ == "__main__":
+    main()
