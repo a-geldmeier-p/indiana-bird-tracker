@@ -1,5 +1,0 @@
-title: Indiana Bird Tracker
-description: User guide for the local-first Indiana Bird Tracker.
-markdown: kramdown
-kramdown:
-  input: GFM
