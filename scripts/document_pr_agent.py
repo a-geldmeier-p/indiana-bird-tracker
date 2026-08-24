@@ -122,7 +122,15 @@ Patch:
             patch = request_patch(api_key, repair_prompt)
             repaired = subprocess.run(["git", "apply", "--check"], input=patch, text=True, capture_output=True)
             if repaired.returncode:
-                raise SystemExit(f"The documentation agent returned an invalid patch:\n{repaired.stderr}")
+                # Never let an untrusted model response break the PR.  Returning an
+                # empty patch lets deterministic checks continue; a later run can
+                # retry documentation generation with the same PR diff.
+                print(
+                    "Documentation agent patch was invalid; skipping this run. "
+                    f"git apply error: {repaired.stderr.strip()}",
+                    file=sys.stderr,
+                )
+                patch = ""
     args.output.write_text(patch + ("\n" if patch else ""), encoding="utf-8")
 
 
