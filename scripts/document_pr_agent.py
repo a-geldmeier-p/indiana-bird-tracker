@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import subprocess
 import sys
 import urllib.error
 import urllib.request
@@ -23,6 +24,29 @@ def response_text(payload: dict) -> str:
 
 def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
+
+
+def request_patch(api_key: str, prompt: str) -> str:
+    request_body = json.dumps(
+        {"model": "gpt-5.6-luna", "input": prompt, "max_output_tokens": 12000}
+    ).encode("utf-8")
+    request = urllib.request.Request(
+        "https://api.openai.com/v1/responses",
+        data=request_body,
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=120) as response:
+            patch = response_text(json.load(response))
+    except urllib.error.HTTPError as error:
+        detail = error.read().decode("utf-8", errors="replace")
+        raise SystemExit(f"OpenAI API request failed ({error.code}): {detail}") from error
+    if patch.startswith("```diff"):
+        patch = patch.removeprefix("```diff").removesuffix("```").strip()
+    if patch.startswith("```"):
+        patch = patch.removeprefix("```").removesuffix("```").strip()
+    return patch
 
 
 def main() -> None:
@@ -72,33 +96,21 @@ Rules:
 {context}
 --- end context ---
 """
-    request_body = json.dumps(
-        {
-            "model": "gpt-5.6-luna",
-            "input": prompt,
-            "max_output_tokens": 12000,
-        }
-    ).encode("utf-8")
-    request = urllib.request.Request(
-        "https://api.openai.com/v1/responses",
-        data=request_body,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(request, timeout=120) as response:
-            patch = response_text(json.load(response))
-    except urllib.error.HTTPError as error:
-        detail = error.read().decode("utf-8", errors="replace")
-        raise SystemExit(f"OpenAI API request failed ({error.code}): {detail}") from error
-
-    if patch.startswith("```diff"):
-        patch = patch.removeprefix("```diff").removesuffix("```").strip()
-    if patch.startswith("```"):
-        patch = patch.removeprefix("```").removesuffix("```").strip()
+    patch = request_patch(api_key, prompt)
+    if patch:
+        check = subprocess.run(["git", "apply", "--check"], input=patch, text=True, capture_output=True)
+        if check.returncode:
+            repair_prompt = f"""Repair this proposed unified git patch so `git apply --check` accepts it.
+Return ONLY the corrected patch, with valid diff headers and hunk line counts.
+Git error:
+{check.stderr}
+Patch:
+{patch}
+"""
+            patch = request_patch(api_key, repair_prompt)
+            repaired = subprocess.run(["git", "apply", "--check"], input=patch, text=True, capture_output=True)
+            if repaired.returncode:
+                raise SystemExit(f"The documentation agent returned an invalid patch:\n{repaired.stderr}")
     args.output.write_text(patch + ("\n" if patch else ""), encoding="utf-8")
 
 
