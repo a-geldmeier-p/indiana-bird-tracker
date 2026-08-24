@@ -12,7 +12,10 @@ forbidden_paths:
   - DESCRIPTION
   - NAMESPACE
   - .github/workflows/**
-required_checks:
+pre_agent_checks:
+  - testthat::test_local()
+  - Shiny smoke check
+post_agent_checks:
   - R CMD check
   - testthat::test_local()
   - roxygen2::roxygenise()

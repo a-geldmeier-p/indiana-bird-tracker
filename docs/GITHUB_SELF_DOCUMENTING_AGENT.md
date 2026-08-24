@@ -62,18 +62,15 @@ permissions:
 
 Keep the LLM/API and Playwright MCP credentials in GitHub environment secrets. Never pass repository code, tokens, or user-uploaded photos to an external service by default.
 
-## 2. Deterministic preflight
+## 2. Two-phase deterministic validation
 
-The first job must pass before an agent can edit documentation:
+The first job must pass before an agent can edit documentation. It checks application behavior, not documentation freshness:
 
 1. Install the pinned R version and package dependencies.
-2. Run `R CMD check` with suggests installed.
-3. Run `testthat::test_local()`.
-4. Run `roxygen2::roxygenise()` and fail if the working tree changes unexpectedly.
-5. Launch the app with temporary DuckDB/photo/reference paths and check an HTTP 200 response.
-6. Run `scripts/check_docs.R` to validate links, required headings, stable IDs, and video placeholders.
+2. Run `testthat::test_local()`.
+3. Launch the app with temporary DuckDB/photo/reference paths and check an HTTP 200 response.
 
-If preflight fails, comment the failure on the PR and stop. The documentation agent must not “fix” production code while documenting a failed PR.
+If preflight fails, comment the failure on the PR and stop. The documentation agent must not “fix” production code while documenting a failed PR. After the agent edits allowed documentation, the post-agent gate runs `R CMD check`, verifies that roxygen creates no additional changes, validates the documentation contract and workflow inventory, and repeats the Shiny smoke check.
 
 ## 3. Documentation agent contract
 

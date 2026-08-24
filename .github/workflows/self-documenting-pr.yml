@@ -1,56 +1,86 @@
 name: Self-documenting PR
+
 on:
   workflow_dispatch:
     inputs:
       pr_number:
-        description: Open PR number
+        description: Open pull-request number from this repository
         required: true
         type: string
+
 permissions:
   contents: write
-  pull-requests: write
+  pull-requests: read
   checks: read
+
 jobs:
+  validate-pr:
+    runs-on: ubuntu-latest
+    outputs:
+      head_ref: ${{ steps.pr.outputs.head_ref }}
+    steps:
+      - id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pr="${{ inputs.pr_number }}"
+          head_repo=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$pr" --jq '.head.repo.full_name')
+          test "$head_repo" = "$GITHUB_REPOSITORY" || { echo 'Forked PRs must receive a patch artifact; this write-capable workflow stops.'; exit 1; }
+          echo "head_ref=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$pr" --jq '.head.ref')" >> "$GITHUB_OUTPUT"
+
   document:
-    if: github.event.pull_request.head.repo.fork == false || github.event_name == 'workflow_dispatch'
+    needs: validate-pr
     runs-on: ubuntu-latest
     environment: self-documenting
     steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.validate-pr.outputs.head_ref }}
+          fetch-depth: 0
+      - uses: r-lib/actions/setup-r@v2
+        with: { r-version: '4.4.3' }
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with: { extra-packages: 'any::rcmdcheck, any::roxygen2, any::testthat, any::curl, any::callr' }
+      - name: Pre-agent application checks
+        run: |
+          R CMD INSTALL .
+          Rscript -e 'testthat::test_local()'
+          Rscript scripts/shiny_smoke.R
       - name: Guard required secrets
         env:
           DOC_AGENT_URL: ${{ secrets.DOC_AGENT_URL }}
           PLAYWRIGHT_ADAPTER_URL: ${{ secrets.PLAYWRIGHT_ADAPTER_URL }}
         run: test -n "$DOC_AGENT_URL" && test -n "$PLAYWRIGHT_ADAPTER_URL"
-      - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
-      - uses: r-lib/actions/setup-r@v2
-        with: { r-version: '4.4.3' }
-      - uses: r-lib/actions/setup-r-dependencies@v2
-        with: { extra-packages: 'any::roxygen2, any::testthat' }
-      - name: Preflight must have passed
-        run: echo "Invoke only after the PR checks are green; the adapter must independently reject a failing PR."
-      - name: Request documentation and Playwright artifacts
+      - name: Request allowed documentation edits
         env:
           DOC_AGENT_URL: ${{ secrets.DOC_AGENT_URL }}
           DOC_AGENT_TOKEN: ${{ secrets.DOC_AGENT_TOKEN }}
-          PLAYWRIGHT_ADAPTER_URL: ${{ secrets.PLAYWRIGHT_ADAPTER_URL }}
-          PLAYWRIGHT_ADAPTER_TOKEN: ${{ secrets.PLAYWRIGHT_ADAPTER_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          mkdir -p docs/playwright/artifacts
-          curl --fail --request POST "$DOC_AGENT_URL" --header "Authorization: Bearer $DOC_AGENT_TOKEN" --header "Content-Type: application/json" --data @.github/agents/documentation-policy.yml
-          curl --fail --request POST "$PLAYWRIGHT_ADAPTER_URL" --header "Authorization: Bearer $PLAYWRIGHT_ADAPTER_TOKEN" --header "Content-Type: application/json" --data '{"base_url":"http://127.0.0.1:PORT","workflows":["catalog","record_sighting","my_sightings","dashboard"],"artifact_dir":"docs/playwright/artifacts","commit_sha":"'"$GITHUB_SHA"'"}'
-      - name: Enforce allow-list
+          gh pr diff "${{ inputs.pr_number }}" > "$RUNNER_TEMP/pr.diff"
+          jq -n --rawfile policy .github/agents/documentation-policy.yml --rawfile diff "$RUNNER_TEMP/pr.diff" --arg repository "$GITHUB_REPOSITORY" --arg pr_number "${{ inputs.pr_number }}" '{repository: $repository, pr_number: $pr_number, policy: $policy, diff: $diff}' > "$RUNNER_TEMP/document-request.json"
+          curl --fail --request POST "$DOC_AGENT_URL" --header "Authorization: Bearer $DOC_AGENT_TOKEN" --header "Content-Type: application/json" --data @"$RUNNER_TEMP/document-request.json" --output "$RUNNER_TEMP/documentation.patch"
+          test -s "$RUNNER_TEMP/documentation.patch"
+          git apply --whitespace=error "$RUNNER_TEMP/documentation.patch"
+      - name: Enforce documentation allow-list
         run: |
           changed=$(git diff --name-only)
-          echo "$changed" | grep -Ev '^(R/|man/|tests/testthat/|README.md$|NEWS.md$|USER_GUIDE.md$|WORKFLOW_INVENTORY.md$|docs/playwright/(manifest.yml|artifacts/))' && exit 1 || true
-      - name: Recheck after generated changes
+          unexpected=$(echo "$changed" | grep -Ev '^(R/|man/|tests/testthat/|README.md$|NEWS.md$|USER_GUIDE.md$|WORKFLOW_INVENTORY.md$|docs/playwright/(manifest.yml|artifacts/))' || true)
+          test -z "$unexpected" || { echo "$unexpected"; exit 1; }
+      - name: Post-agent documentation checks
         run: |
-          Rscript -e 'roxygen2::roxygenise(); testthat::test_local()'
+          git diff --binary -- R man NAMESPACE > "$RUNNER_TEMP/before-roxygen.diff"
+          Rscript -e 'roxygen2::roxygenise()'
+          git diff --binary -- R man NAMESPACE > "$RUNNER_TEMP/after-roxygen.diff"
+          diff -u "$RUNNER_TEMP/before-roxygen.diff" "$RUNNER_TEMP/after-roxygen.diff"
+          Rscript -e 'rcmdcheck::rcmdcheck(args = "--no-manual", error_on = "error")'
           Rscript scripts/check_docs.R
-      - name: Commit documentation only
+          Rscript scripts/update_workflow_inventory.R
+          Rscript scripts/shiny_smoke.R
+      - name: Commit reviewed documentation changes
         run: |
           git config user.name 'indiana-bird-tracker-docs[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add R man tests/testthat README.md NEWS.md USER_GUIDE.md WORKFLOW_INVENTORY.md docs/playwright
           git diff --cached --quiet || git commit -m 'docs: update self-documenting PR artifacts'
-          git push
+          git push origin "HEAD:${{ needs.validate-pr.outputs.head_ref }}"
