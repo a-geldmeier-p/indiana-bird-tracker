@@ -1,6 +1,8 @@
 name: Self-documenting PR
 
 on:
+  pull_request:
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
     inputs:
       pr_number:
@@ -23,15 +25,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          pr="${{ inputs.pr_number }}"
+          pr="${{ github.event.pull_request.number || inputs.pr_number }}"
           head_repo=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$pr" --jq '.head.repo.full_name')
           test "$head_repo" = "$GITHUB_REPOSITORY" || { echo 'Forked PRs must receive a patch artifact; this write-capable workflow stops.'; exit 1; }
           echo "head_ref=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$pr" --jq '.head.ref')" >> "$GITHUB_OUTPUT"
 
   document:
     needs: validate-pr
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    environment: self-documenting
     steps:
       - uses: actions/checkout@v6
         with:
@@ -54,8 +56,9 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh pr diff "${{ inputs.pr_number }}" > "$RUNNER_TEMP/pr.diff"
-          python scripts/document_pr_agent.py --repository "$GITHUB_REPOSITORY" --pr-number "${{ inputs.pr_number }}" --policy .github/agents/documentation-policy.yml --diff "$RUNNER_TEMP/pr.diff" --output "$RUNNER_TEMP/documentation.patch"
+          pr="${{ github.event.pull_request.number || inputs.pr_number }}"
+          gh pr diff "$pr" > "$RUNNER_TEMP/pr.diff"
+          python scripts/document_pr_agent.py --repository "$GITHUB_REPOSITORY" --pr-number "$pr" --policy .github/agents/documentation-policy.yml --diff "$RUNNER_TEMP/pr.diff" --output "$RUNNER_TEMP/documentation.patch"
           test ! -s "$RUNNER_TEMP/documentation.patch" || git apply --whitespace=error "$RUNNER_TEMP/documentation.patch"
       - name: Enforce documentation allow-list
         run: |
