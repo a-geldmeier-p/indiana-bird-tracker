@@ -42,11 +42,23 @@ def request_patch(api_key: str, prompt: str) -> str:
     except urllib.error.HTTPError as error:
         detail = error.read().decode("utf-8", errors="replace")
         raise SystemExit(f"OpenAI API request failed ({error.code}): {detail}") from error
-    if patch.startswith("```diff"):
-        patch = patch.removeprefix("```diff").removesuffix("```").strip()
-    if patch.startswith("```"):
-        patch = patch.removeprefix("```").removesuffix("```").strip()
-    return patch
+    return normalize_patch(patch)
+
+
+def normalize_patch(patch: str) -> str:
+    """Remove model prose/fences while preserving a complete git patch."""
+    patch = patch.replace("\\r\\n", "\\n").strip()
+    if "```" in patch:
+        blocks = patch.split("```")
+        fenced = [block for block in blocks if "diff --git " in block]
+        if fenced:
+            patch = fenced[0]
+    marker = patch.find("diff --git ")
+    if marker >= 0:
+        patch = patch[marker:]
+    if patch.endswith("```"):
+        patch = patch[:-3].rstrip()
+    return patch.strip()
 
 
 def main() -> None:
