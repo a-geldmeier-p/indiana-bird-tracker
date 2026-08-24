@@ -64,3 +64,5 @@ Database initialization is transactional and idempotent. It creates tables and i
 Uploaded JPEG, PNG, GIF, and WebP images are signature-checked and copied into the app-managed local library at `photos/<safe-species-name>/sighting-<id>.<ext>`. A numeric suffix prevents collisions. DuckDB stores only the relative file path, never image bytes. The library defaults beside the database and can be changed with `run_app(photo_library = ...)`. A manually entered local path or URL remains available as an alternative; arbitrary local paths are displayed as references but are not exposed through the app's web server.
 
 Run non-UI tests with `testthat::test_local()`. See [WORKFLOW_INVENTORY.md](WORKFLOW_INVENTORY.md) for the future browser-test contract.
+
+<!-- automatic documentation test -->
