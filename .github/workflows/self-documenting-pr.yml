@@ -71,7 +71,7 @@ jobs:
           pr="${{ github.event.pull_request.number || inputs.pr_number }}"
           gh pr diff "$pr" > "$RUNNER_TEMP/pr.diff"
           python scripts/document_pr_agent.py --repository "$GITHUB_REPOSITORY" --pr-number "$pr" --policy .github/agents/documentation-policy.yml --diff "$RUNNER_TEMP/pr.diff" --output "$RUNNER_TEMP/documentation.patch"
-          test ! -s "$RUNNER_TEMP/documentation.patch" || git apply --whitespace=error "$RUNNER_TEMP/documentation.patch"
+          test ! -s "$RUNNER_TEMP/documentation.patch" || git apply --whitespace=fix "$RUNNER_TEMP/documentation.patch"
       - name: Enforce documentation allow-list
         run: |
           changed=$(git diff --name-only)
