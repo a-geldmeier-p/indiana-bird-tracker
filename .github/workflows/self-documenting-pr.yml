@@ -100,3 +100,89 @@ jobs:
           git add R man tests/testthat README.md NEWS.md USER_GUIDE.md WORKFLOW_INVENTORY.md docs/playwright
           git diff --cached --quiet || git commit -m 'docs: update self-documenting PR artifacts'
           git push origin "HEAD:${{ needs.validate-pr.outputs.head_ref }}"
+
+  playwright:
+    name: tutorial videos
+    needs: [validate-pr, document]
+    if: needs.document.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out the latest PR branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.validate-pr.outputs.head_ref }}
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.4.3'
+
+      - name: Install R dependencies
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          pak-version: repo
+          extra-packages: 'any::curl'
+
+      - name: Install Indiana Bird Tracker
+        run: R CMD INSTALL .
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install Playwright
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Seed demo data and start Shiny
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/bird-tracker/photos"
+          mkdir -p "$RUNNER_TEMP/bird-tracker/reference-photos"
+          Rscript scripts/seed_playwright_demo.R \
+            "$RUNNER_TEMP/bird-tracker/bird_tracker.duckdb" \
+            "$RUNNER_TEMP/bird-tracker/photos" \
+            --serve \
+            "$RUNNER_TEMP/bird-tracker/reference-photos" \
+            > "$RUNNER_TEMP/shiny-playwright.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/shiny-playwright.pid"
+
+      - name: Wait for Shiny
+        shell: bash
+        run: |
+          for attempt in {1..60}; do
+            if curl --fail --silent http://127.0.0.1:3838 > /dev/null; then
+              echo "Shiny is ready for tutorial recording."
+              exit 0
+            fi
+            if ! kill -0 "$(cat "$RUNNER_TEMP/shiny-playwright.pid")" 2>/dev/null; then
+              echo "Shiny exited before becoming ready."
+              cat "$RUNNER_TEMP/shiny-playwright.log"
+              exit 1
+            fi
+            sleep 1
+          done
+          echo "Shiny did not become ready within 60 seconds."
+          cat "$RUNNER_TEMP/shiny-playwright.log"
+          exit 1
+
+      - name: Record tutorial workflows
+        env:
+          BASE_URL: http://127.0.0.1:3838
+        run: npm run test:tutorials
+
+      - name: Upload tutorial videos and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: tutorial-videos-${{ github.sha }}
+          path: |
+            test-results/
+            playwright-report/
+            ${{ runner.temp }}/shiny-playwright.log
+          if-no-files-found: warn
+          retention-days: 30
