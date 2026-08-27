@@ -1,0 +1,30 @@
+{
+  "name": "indiana-bird-tracker",
+  "version": "1.0.0",
+  "description": "A deliberately small, personal Shiny app packaged with a `{golem}`-compatible structure. It stores sightings locally in DuckDB, provides a source-documented Indiana bird catalog, and keeps the UI/workflows stable enough to support a later browser-tested documentation-maintenance demo.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "man": "man",
+    "test": "tests"
+  },
+  "scripts": {
+    "test:tutorials": "playwright test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/a-geldmeier-p/indiana-bird-tracker.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/a-geldmeier-p/indiana-bird-tracker/issues"
+  },
+  "homepage": "https://github.com/a-geldmeier-p/indiana-bird-tracker#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@types/node": "^26.4.0"
+  }
+}

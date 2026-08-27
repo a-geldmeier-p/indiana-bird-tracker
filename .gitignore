@@ -9,3 +9,11 @@ reference-photos/
 work/
 docs/playwright/artifacts/*
 !docs/playwright/artifacts/.gitkeep
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
