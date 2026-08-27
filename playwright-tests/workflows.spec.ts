@@ -8,20 +8,34 @@ test('catalog tutorial', async ({ page }) => {
   await page.getByRole('link', { name: 'Species catalog' }).click();
 
   await page.getByLabel('Search common or scientific name').fill('cardinal');
+  await page.getByRole('button', { name: 'Filter catalog' }).click();
+  await expect(page.getByText('Northern Cardinal')).toBeVisible();
+  await pause(page);
+  await page.mouse.wheel(0, 700);
+  await pause(page);
+  await page.getByRole('button', { name: 'Reset filters' }).click();
+  await pause(page);
+
   await pause(page);
   const group = page.locator('#species-bird_group-selectized');
-  await group.fill('Tanagers, Cardinals, and Grosbeaks');
+  await group.fill('Ducks, Geese, and Swans');
   await group.press('Enter');
   await pause(page);
+  await page.getByRole('button', { name: 'Filter catalog' }).click();
+  await page.mouse.wheel(0, 700);
+  await pause(page);
+  await page.getByRole('button', { name: 'Reset filters' }).click();
+  await pause(page);
+
   const status = page.locator('#species-status_note-selectized');
-  await status.fill('No special state or federal status code shown');
+  await status.fill('Indiana State Endangered');
   await status.press('Enter');
   await pause(page);
   await page.getByRole('button', { name: 'Filter catalog' }).click();
   await expect(
     page.getByText('Search common or scientific name')
   ).toBeVisible();
-  await page.mouse.wheel(0, 900);
+  await page.mouse.wheel(0, 700);
   await pause(page);
   await page.getByRole('button', { name: 'Reset filters' }).click();
 });
