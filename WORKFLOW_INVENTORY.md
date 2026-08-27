@@ -43,9 +43,9 @@ This inventory is the human-readable contract for the Playwright tutorial record
 - Confirm recent observations include their species reference thumbnails.
 - Add a sighting, return to the dashboard, and confirm metrics refresh without restarting the app.
 
-## Suggested browser-test fixture
+## Tutorial recording fixture
 
-Each test run should use a new temporary DuckDB path and photo-library directory, call `initialize_bird_db()`, and add only the sightings and tiny image fixtures the test owns. This makes counts deterministic, avoids modifying a person's real data, and allows fixtures to be removed after the app and connection close. Include one valid image, one renamed non-image, two same-ID copies to exercise collision handling, and one intentionally missing managed path.
+The pull-request workflow uses `scripts/seed_playwright_demo.R` with a temporary DuckDB path and temporary photo and reference-photo folders. The script seeds four synthetic sightings and synthetic SVG photo fixtures, then starts Shiny on the local workflow port. Playwright records the `catalog`, `record_sighting`, `my_sightings`, and `dashboard` workflows serially with Chromium video enabled. Videos and diagnostics are uploaded as a temporary 30-day workflow artifact; no generated video links are added to the user guide by this workflow.
 
 ## 5. Repository pull-request workflows
 
@@ -53,4 +53,5 @@ Each test run should use a new temporary DuckDB path and photo-library directory
 - The workflow validates the pull request head repository, checks out the head revision, and runs an application preflight that installs the package, runs local `testthat` tests, and performs the Shiny smoke check.
 - After preflight, the documentation job obtains the pull-request diff, asks the documentation agent for an allow-listed patch, and checks that patch before applying it.
 - The manual-dispatch path uses the supplied pull-request number; pull-request events use the event's pull-request number.
+- After documentation succeeds, the tutorial-recording job starts a temporary seeded Shiny instance, runs the four Playwright workflows, and uploads videos and diagnostics when the job completes.
 - The former `.github/workflows/pr-check.yml` workflow has been removed; its application installation, test, and Shiny smoke-check commands are now part of the self-documenting workflow's preflight job.

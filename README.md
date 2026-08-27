@@ -1,6 +1,6 @@
 # Indiana Bird Tracker
 
-A deliberately small, personal Shiny app packaged with a `{golem}`-compatible structure. It stores sightings locally in DuckDB, provides a source-documented Indiana bird catalog, and keeps the UI/workflows stable enough to support a later browser-tested documentation-maintenance demo.
+A deliberately small, personal Shiny app packaged with a `{golem}`-compatible structure. It stores sightings locally in DuckDB, provides a source-documented Indiana bird catalog, and keeps the UI/workflows stable enough to support browser-tested tutorial recordings.
 
 ## What it does
 
@@ -27,8 +27,8 @@ Accordingly, this is a complete snapshot of the cited DNR table, not a claim to 
 
 ## Setup and run
 
-See the [hosted user guide](https://a-geldmeier-p.github.io/indiana-bird-tracker/) for step-by-step workflows and reserved video sections for future browser recordings. The source is [USER_GUIDE.md](USER_GUIDE.md).
-Release notes are kept in [NEWS.md](NEWS.md); automated pull-request updates are reserved for a later maintenance phase.
+See the [hosted user guide](https://a-geldmeier-p.github.io/indiana-bird-tracker/) for step-by-step workflows. The guide contains four reserved video sections; pull-request automation records tutorial videos with synthetic data and uploads them as temporary workflow artifacts, but those artifacts are not yet published in the guide. The source is [USER_GUIDE.md](USER_GUIDE.md).
+Release notes are kept in [NEWS.md](NEWS.md). The self-documenting pull-request workflow can update documentation after its application preflight and can record the catalog, record-sighting, My Sightings, and dashboard tutorials.
 
 Install the package dependencies, then install this package:
 
@@ -63,6 +63,6 @@ Database initialization is transactional and idempotent. It creates tables and i
 
 Uploaded JPEG, PNG, GIF, and WebP images are signature-checked and copied into the app-managed local library at `photos/<safe-species-name>/sighting-<id>.<ext>`. A numeric suffix prevents collisions. DuckDB stores only the relative file path, never image bytes. The library defaults beside the database and can be changed with `run_app(photo_library = ...)`. A manually entered local path or URL remains available as an alternative; arbitrary local paths are displayed as references but are not exposed through the app's web server.
 
-Run non-UI tests with `testthat::test_local()`. See [WORKFLOW_INVENTORY.md](WORKFLOW_INVENTORY.md) for the future browser-test contract.
+Run non-UI tests with `testthat::test_local()`. See [WORKFLOW_INVENTORY.md](WORKFLOW_INVENTORY.md) for the stable browser-workflow contract and the synthetic tutorial fixture used by pull-request recording.
 
 <!-- automatic documentation test -->
