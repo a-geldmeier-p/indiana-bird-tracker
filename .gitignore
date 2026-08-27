@@ -7,6 +7,7 @@ bird_tracker.duckdb.wal
 photos/
 reference-photos/
 work/
+.ci-temp/
 docs/playwright/artifacts/*
 !docs/playwright/artifacts/.gitkeep
 

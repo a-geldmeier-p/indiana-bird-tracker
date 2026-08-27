@@ -16,6 +16,7 @@ Imports:
     DBI,
     duckdb,
     golem,
+    htmltools,
     shiny
 Collate:
     'app_config.R'

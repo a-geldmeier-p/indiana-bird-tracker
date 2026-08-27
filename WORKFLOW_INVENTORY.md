@@ -1,6 +1,6 @@
 # Workflow inventory
 
-This inventory is the human-readable contract for later Playwright tests and automated user-guide maintenance. Labels and IDs below should be treated as stable unless a deliberate workflow change is made.
+This inventory is the human-readable contract for the Playwright tutorial recordings and automated user-guide maintenance. Labels and IDs below should be treated as stable unless a deliberate workflow change is made.
 
 ## 1. Browse the species catalog
 
