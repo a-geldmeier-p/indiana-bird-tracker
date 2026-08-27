@@ -76,8 +76,10 @@ test('my sightings tutorial', async ({ page }) => {
   await dateRange.last().fill('2026-08-26');
   await page.getByRole('button', { name: 'Filter sightings' }).click();
   await pause(page);
+  await expect(page.getByRole('cell', { name: /Playwright demo:/ }).first()).toBeVisible();
   await page.mouse.wheel(0, 1200);
   await expect(page.getByRole('heading', { name: 'Sighting photos' })).toBeVisible();
+  await expect(page.locator('img.sighting-photo').first()).toBeVisible();
   await pause(page);
   await page.getByRole('button', { name: 'Reset filters' }).click();
 });
@@ -94,4 +96,8 @@ test('dashboard tutorial', async ({ page }) => {
   await expect(
     page.getByText('Distinct species')
   ).toBeVisible();
+  await expect(page.locator('#dashboard-total_sightings')).not.toHaveText('0');
+  await expect(page.getByRole('cell', { name: /Eagle Creek Park|Fort Harrison State Park|White River State Park|Monon Trail/ }).first()).toBeVisible();
+  await page.mouse.wheel(0, 700);
+  await pause(page);
 });

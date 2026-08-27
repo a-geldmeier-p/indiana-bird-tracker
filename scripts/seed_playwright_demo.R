@@ -8,7 +8,10 @@ photo_library <- args[[2]]
 dir.create(photo_library, recursive = TRUE, showWarnings = FALSE)
 
 con <- indianabirdtracker::bird_db_connect(db_path)
-on.exit(DBI::dbDisconnect(con, shutdown = TRUE), add = TRUE)
+disconnected <- FALSE
+on.exit({
+  if (!disconnected) DBI::dbDisconnect(con, shutdown = TRUE)
+}, add = TRUE)
 indianabirdtracker::initialize_bird_db(con)
 
 DBI::dbExecute(con, "DELETE FROM sightings WHERE notes LIKE 'Playwright demo:%'")
@@ -80,3 +83,17 @@ for (i in seq_len(nrow(demo))) {
 }
 
 message("Seeded four synthetic Playwright tutorial sightings in: ", db_path)
+
+DBI::dbDisconnect(con, shutdown = TRUE)
+disconnected <- TRUE
+
+if (length(args) >= 3L && identical(args[[3]], "--serve")) {
+  reference_path <- if (length(args) >= 4L) args[[4]] else file.path(dirname(db_path), "reference-photos")
+  dir.create(reference_path, recursive = TRUE, showWarnings = FALSE)
+  app <- indianabirdtracker::run_app(
+    db_path = db_path,
+    photo_library = photo_library,
+    reference_path = reference_path
+  )
+  shiny::runApp(app, host = "127.0.0.1", port = 3838, launch.browser = FALSE)
+}
