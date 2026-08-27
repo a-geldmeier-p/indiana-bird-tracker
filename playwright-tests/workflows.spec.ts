@@ -6,8 +6,10 @@ test('catalog tutorial', async ({ page }) => {
   await page.getByRole('link', { name: 'Species catalog' }).click();
 
   await page.getByLabel('Search common or scientific name').fill('cardinal');
-  await page.locator('#species-bird_group').selectOption({ index: 1 });
-  await page.locator('#species-status_note').selectOption({ index: 1 });
+  await page.locator('#species-bird_group-selectized').click();
+  await page.locator('.selectize-dropdown:visible .option').nth(1).click();
+  await page.locator('#species-status_note-selectized').click();
+  await page.locator('.selectize-dropdown:visible .option').nth(1).click();
   await page.getByRole('button', { name: 'Filter catalog' }).click();
   await expect(
     page.getByText('Search common or scientific name')
@@ -26,7 +28,7 @@ test('record sighting tutorial', async ({ page }) => {
   await page.locator('.selectize-dropdown .option').first().waitFor();
   await page.locator('.selectize-dropdown .option').first().click();
   await page.getByLabel('Observation time').fill('12:00');
-  await page.getByLabel('Observation date').fill('2026-08-20');
+  await page.locator('#record-observation_date').fill('2026-08-20');
   await page.getByLabel('Location').fill('Eagle Creek Park');
   await page.getByLabel('Indiana county').fill('Marion');
   await page.getByLabel('Notes (optional)').fill('Playwright tutorial sighting');
