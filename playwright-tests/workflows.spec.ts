@@ -9,7 +9,7 @@ test('catalog tutorial', async ({ page }) => {
 
   await page.getByLabel('Search common or scientific name').fill('cardinal');
   await page.getByRole('button', { name: 'Filter catalog' }).click();
-  await expect(page.getByText('Northern Cardinal')).toBeVisible();
+  await expect(page.getByRole('cell', { name: 'Northern Cardinal' })).toBeVisible();
   await pause(page);
   await page.mouse.wheel(0, 700);
   await pause(page);
