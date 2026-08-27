@@ -18,10 +18,10 @@ test('record sighting tutorial', async ({ page }) => {
 
   await page.getByRole('link', { name: 'Record sighting' }).click();
 
-  const species = page.getByRole('combobox', { name: 'Species' }).first();
+  const species = page.locator('#record-species_code-selectized');
   await species.click();
-  await species.press('ArrowDown');
-  await species.press('Enter');
+  await page.locator('.selectize-dropdown .option').first().waitFor();
+  await page.locator('.selectize-dropdown .option').first().click();
   await page.getByLabel('Observation time').fill('12:00');
   await page.getByLabel('Location').fill('Eagle Creek Park');
   await page.getByLabel('Indiana county').fill('Marion');
