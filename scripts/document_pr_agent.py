@@ -87,11 +87,10 @@ def contents_to_patch(files: dict[str, str]) -> str:
 
 
 def preserves_video_placeholders(patch: str) -> bool:
-    """Keep placeholders until a verified Playwright result manifest exists."""
-    if Path("docs/playwright/artifacts/result.json").exists():
-        return True
+    """Keep pending placeholders and existing verified video embeds."""
+    protected = ("VIDEO PLACEHOLDER:", 'id="tutorial-', "docs/playwright/artifacts/")
     return not any(
-        line.startswith("-") and "VIDEO PLACEHOLDER:" in line
+        line.startswith("-") and any(marker in line for marker in protected)
         for line in patch.splitlines()
     )
 
@@ -166,9 +165,12 @@ Rules:
   or Playwright files. Do not add unrelated tests or documentation.
 - Make only changes supported by the PR diff. Do not invent features, links, videos,
   screenshots, or test results. Preserve existing Markdown structure and headings.
-- Preserve all four existing `VIDEO PLACEHOLDER:` comments in USER_GUIDE.md exactly.
-  They may be replaced only when `docs/playwright/artifacts/result.json` already
-  contains verified real video paths.
+- Treat deleted Roxygen fields, focused tests, README capabilities, NEWS entries,
+  user-guide steps, and workflow-inventory steps as stale-documentation gaps when
+  the corresponding implementation still exists. Restore or replace that coverage.
+- Preserve every existing `VIDEO PLACEHOLDER:` comment and published tutorial
+  `<figure>`/`docs/playwright/artifacts/` reference in USER_GUIDE.md exactly.
+  The deterministic Playwright publisher, not the model, replaces placeholders.
 - If a file does not need a truthful update, leave it unchanged. If none need updates,
   return an empty response.
 - Every changed file must have a complete `diff --git` header and valid hunk counts.
@@ -217,8 +219,8 @@ Patch:
             )
             if rebuilt.returncode or not preserves_video_placeholders(patch):
                 raise SystemExit(
-                    "Documentation agent attempted to remove video placeholders "
-                    "without verified Playwright artifacts."
+                    "Documentation agent attempted to remove protected video "
+                    "placeholders or published artifact links."
                 )
     args.output.write_text(patch + ("\n" if patch else ""), encoding="utf-8")
 
