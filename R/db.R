@@ -223,6 +223,7 @@ list_sightings <- function(con, species_code = "", county = "",
 #' Summarize a personal birding database
 #'
 #' @param con An initialized bird tracker DBI connection.
+#' @param recent_limit Maximum number of recent sightings to return.
 #' @return A list with `total_sightings`, `distinct_species`, and `recent`.
 #' @export
 dashboard_summary <- function(con, recent_limit = 5L) {

@@ -22,6 +22,7 @@ This inventory is the human-readable contract for the Playwright tutorial record
 - Enter required **Location** and **Indiana county** (`record-location`, `record-county`).
 - Optionally upload a supported image (`record-photo_upload`) or enter a path/URL (`record-photo_reference`).
 - After choosing a species, confirm the compact catalog reference preview appears; this is separate from the optional user upload.
+- Select **Save sighting** (`record-save_sighting`).
 - Confirm `record-save-status` reports success; also test a missing required value and confirm an understandable error.
 
 ## 3. Browse recorded sightings
@@ -44,7 +45,7 @@ This inventory is the human-readable contract for the Playwright tutorial record
 
 ## Tutorial recording fixture
 
-The pull-request workflow uses `scripts/seed_playwright_demo.R` with a temporary DuckDB path and temporary photo and reference-photo folders. The script seeds four synthetic sightings and synthetic SVG photo fixtures, then starts Shiny on the local workflow port. Playwright records the `catalog`, `record_sighting`, `my_sightings`, and `dashboard` workflows serially with Chromium video enabled. Videos and diagnostics are uploaded as a temporary 30-day workflow artifact; no generated video links are added to the user guide by this workflow.
+The pull-request workflow uses `scripts/seed_playwright_demo.R` with a temporary DuckDB path and temporary photo and reference-photo folders. The script seeds four synthetic sightings and synthetic SVG photo fixtures, then starts Shiny on the local workflow port. Playwright records the `catalog`, `record_sighting`, `my_sightings`, and `dashboard` workflows serially with Chromium video enabled. After recording, verified videos are copied into `docs/playwright/artifacts/`, recorded in `docs/playwright/manifest.yml` and `docs/playwright/artifacts/result.json`, and embedded in the corresponding user-guide sections. Videos and diagnostics are also uploaded as a temporary 30-day workflow artifact.
 
 ## 5. Repository pull-request workflows
 
@@ -52,5 +53,6 @@ The pull-request workflow uses `scripts/seed_playwright_demo.R` with a temporary
 - The workflow validates the pull request head repository, checks out the head revision, and runs an application preflight that installs the package, runs local `testthat` tests, and performs the Shiny smoke check.
 - After preflight, the documentation job obtains the pull-request diff, asks the documentation agent for an allow-listed patch, and checks that patch before applying it.
 - The manual-dispatch path uses the supplied pull-request number; pull-request events use the event's pull-request number.
-- After documentation succeeds, the tutorial-recording job starts a temporary seeded Shiny instance, runs the four Playwright workflows, and uploads videos and diagnostics when the job completes.
+- After documentation checks succeed, the same job starts a temporary seeded Shiny instance, runs the four Playwright workflows, publishes verified recordings and synchronized placeholders, and rechecks the documentation.
+- The workflow commits reviewed documentation, manifest, and published recording changes to the pull-request branch when there are changes, then uploads videos and diagnostics when the job completes.
 - The former `.github/workflows/pr-check.yml` workflow has been removed; its application installation, test, and Shiny smoke-check commands are now part of the self-documenting workflow's preflight job.

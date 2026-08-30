@@ -2,14 +2,14 @@ version: 1
 artifact_root: docs/playwright/artifacts
 workflows:
   - id: catalog
-    guide_heading: Browse the Indiana catalog
-    video_placeholder: "<!-- VIDEO PLACEHOLDER: Catalog browsing and filtering (Playwright recording) -->"
+    video: docs/playwright/artifacts/catalog.webm
+    commit_sha: 8379a36f6e059120304f539f5991f0bd70b38506
   - id: record_sighting
-    guide_heading: Record a sighting
-    video_placeholder: "<!-- VIDEO PLACEHOLDER: Recording a sighting with a photo (Playwright recording) -->"
+    video: docs/playwright/artifacts/record_sighting.webm
+    commit_sha: 8379a36f6e059120304f539f5991f0bd70b38506
   - id: my_sightings
-    guide_heading: Review and filter My Sightings
-    video_placeholder: "<!-- VIDEO PLACEHOLDER: Filtering and reviewing My Sightings (Playwright recording) -->"
+    video: docs/playwright/artifacts/my_sightings.webm
+    commit_sha: 8379a36f6e059120304f539f5991f0bd70b38506
   - id: dashboard
-    guide_heading: View the dashboard
-    video_placeholder: "<!-- VIDEO PLACEHOLDER: Dashboard overview (Playwright recording) -->"
+    video: docs/playwright/artifacts/dashboard.webm
+    commit_sha: 8379a36f6e059120304f539f5991f0bd70b38506

@@ -26,8 +26,8 @@ Accordingly, this is a complete snapshot of the cited DNR table, not a claim to 
 
 ## Setup and run
 
-See the [hosted user guide](https://a-geldmeier-p.github.io/indiana-bird-tracker/) for step-by-step workflows. The guide contains four reserved video sections; pull-request automation records tutorial videos with synthetic data and uploads them as temporary workflow artifacts, but those artifacts are not yet published in the guide. The source is [USER_GUIDE.md](USER_GUIDE.md).
-Release notes are kept in [NEWS.md](NEWS.md). The self-documenting pull-request workflow can update documentation after its application preflight and can record the catalog, record-sighting, My Sightings, and dashboard tutorials.
+See the [hosted user guide](https://a-geldmeier-p.github.io/indiana-bird-tracker/) for step-by-step workflows. The guide contains four reserved video sections. Pull-request automation records tutorial videos with synthetic data, publishes verified recordings into `docs/playwright/artifacts/`, and updates the guide and recording manifest when recordings are available. The source is [USER_GUIDE.md](USER_GUIDE.md).
+Release notes are kept in [NEWS.md](NEWS.md). The self-documenting pull-request workflow can update documentation after its application preflight, record the catalog, record-sighting, My Sightings, and dashboard tutorials, and publish verified recordings.
 
 Install the package dependencies, then install this package:
 
