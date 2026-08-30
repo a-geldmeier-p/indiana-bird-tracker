@@ -88,11 +88,20 @@ def contents_to_patch(files: dict[str, str]) -> str:
 
 
 def preserves_video_placeholders(patch: str) -> bool:
-    """Keep pending placeholders and existing verified video embeds."""
+    """Keep pending placeholders and existing verified video embeds.
+
+    A complete-file fallback may move a protected block.  Git represents that
+    move as a removal plus an identical addition, which is safe.  Reject only
+    protected content removed without an exact replacement in the patch.
+    """
     protected = ("VIDEO PLACEHOLDER:", 'id="tutorial-', "docs/playwright/artifacts/")
-    return not any(
-        line.startswith("-") and any(marker in line for marker in protected)
-        for line in patch.splitlines()
+    lines = patch.splitlines()
+    added = {line[1:] for line in lines if line.startswith("+") and not line.startswith("+++")}
+    removed = {line[1:] for line in lines if line.startswith("-") and not line.startswith("---")}
+    return all(
+        line in added
+        for line in removed
+        if any(marker in line for marker in protected)
     )
 
 
