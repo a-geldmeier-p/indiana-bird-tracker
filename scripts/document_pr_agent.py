@@ -95,6 +95,42 @@ def preserves_video_placeholders(patch: str) -> bool:
     )
 
 
+def protected_guide_blocks(guide: str) -> list[tuple[str, str]]:
+    """Return each protected tutorial block with the section that owns it."""
+    blocks = []
+    patterns = (
+        r"<!-- VIDEO PLACEHOLDER:.*?-->",
+        r'<figure id="tutorial-[^"]+">.*?</figure>',
+    )
+    for pattern in patterns:
+        for match in re.finditer(pattern, guide, re.DOTALL):
+            heading_matches = list(re.finditer(r"^## (.+)$", guide[: match.start()], re.MULTILINE))
+            heading = heading_matches[-1].group(1) if heading_matches else ""
+            blocks.append((heading, match.group(0)))
+    return blocks
+
+
+def restore_protected_guide_blocks(candidate: str) -> str:
+    """Keep recorded-video blocks while allowing the model to update surrounding prose."""
+    original = read_text(Path("USER_GUIDE.md"))
+    for heading, block in protected_guide_blocks(original):
+        if block in candidate:
+            continue
+        marker = f"## {heading}"
+        if marker in candidate:
+            start = candidate.index(marker)
+            next_heading = candidate.find("\n## ", start + len(marker))
+            insertion = len(candidate) if next_heading < 0 else next_heading
+            candidate = (
+                candidate[:insertion].rstrip()
+                + f"\n\n{block}\n"
+                + candidate[insertion:]
+            )
+        else:
+            candidate = candidate.rstrip() + f"\n\n{marker}\n\n{block}\n"
+    return candidate
+
+
 def request_file_contents(api_key: str, repository: str, pr_number: str, context: str, diff: str) -> str:
     prompt = f"""You are documenting {repository}, PR #{pr_number}.
 Return ONLY a JSON object with this exact shape: {{\"files\": {{\"README.md\": \"full text\", \"NEWS.md\": \"full text\", \"USER_GUIDE.md\": \"full text\", \"WORKFLOW_INVENTORY.md\": \"full text\"}}}}.
@@ -114,7 +150,12 @@ PR diff:\n{diff}\nCurrent files:\n{context}"""
         files = payload.get("files", {})
         if not isinstance(files, dict):
             raise ValueError("files must be an object")
-        return contents_to_patch({str(k): str(v) for k, v in files.items()})
+        normalized = {str(k): str(v) for k, v in files.items()}
+        if "USER_GUIDE.md" in normalized:
+            normalized["USER_GUIDE.md"] = restore_protected_guide_blocks(
+                normalized["USER_GUIDE.md"]
+            )
+        return contents_to_patch(normalized)
     except (json.JSONDecodeError, ValueError) as error:
         raise SystemExit(f"Documentation agent returned invalid structured content: {error}") from error
 
