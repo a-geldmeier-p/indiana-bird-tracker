@@ -6,7 +6,6 @@ A deliberately small, personal Shiny app packaged with a `{golem}`-compatible st
 
 - Search and filter a 425-record Indiana catalog with common name, scientific name, family group, status, and a brief range description.
 - Record a sighting with species, date/time, location, county, notes, and an optional photo upload or path/URL.
-- Filter saved sightings by species, county, and date range.
 - Review total sightings, distinct species, and recent observations.
 
 On **My sightings**, the date filter is an on/off slider. The date-range control is shown only while the slider is enabled; selecting **Filter sightings** applies the visible controls, and **Reset filters** restores all sightings.
@@ -27,8 +26,8 @@ Accordingly, this is a complete snapshot of the cited DNR table, not a claim to 
 
 ## Setup and run
 
-See the [hosted user guide](https://a-geldmeier-p.github.io/indiana-bird-tracker/) for step-by-step workflows. The guide contains four reserved video sections; pull-request automation records tutorial videos with synthetic data and uploads them as temporary workflow artifacts, but those artifacts are not yet published in the guide. The source is [USER_GUIDE.md](USER_GUIDE.md).
-Release notes are kept in [NEWS.md](NEWS.md). The self-documenting pull-request workflow can update documentation after its application preflight and can record the catalog, record-sighting, My Sightings, and dashboard tutorials.
+See the [hosted user guide](https://a-geldmeier-p.github.io/indiana-bird-tracker/) for step-by-step workflows. The guide contains four reserved video sections. Pull-request automation records tutorial videos with synthetic data, publishes verified recordings into `docs/playwright/artifacts/`, and updates the guide and recording manifest when recordings are available. The source is [USER_GUIDE.md](USER_GUIDE.md).
+Release notes are kept in [NEWS.md](NEWS.md). The self-documenting pull-request workflow can update documentation after its application preflight, record the catalog, record-sighting, My Sightings, and dashboard tutorials, and publish verified recordings.
 
 Install the package dependencies, then install this package:
 

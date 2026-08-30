@@ -10,7 +10,7 @@ This document explains what happens after a pull request (PR) is opened in India
 4. GitHub Actions is enabled.
 5. R 4.4.3-compatible dependencies are available from the configured RSPM.
 
-The current workflow performs the OpenAI documentation phase and then records Playwright tutorial videos directly in GitHub Actions. Videos remain downloadable workflow artifacts until a later publishing step copies verified files into the Pages source.
+The current workflow performs the OpenAI documentation phase and then records Playwright tutorial videos directly in GitHub Actions. Verified recordings are copied into `docs/playwright/artifacts/`, written into the manifest, and embedded in the user guide before one bot commit is pushed.
 
 ## Complete PR sequence
 
@@ -72,13 +72,13 @@ Only after all post-agent checks pass does the workflow configure its bot identi
 
 ## 9. Playwright tutorial videos
 
-Playwright runs after `document` succeeds, using a temporary Shiny instance, temporary DuckDB, synthetic rows, and temporary photo folders. It runs `catalog`, `record_sighting`, `my_sightings`, and `dashboard`, captures one video per workflow, and uploads the videos and diagnostics as a 30-day GitHub Actions artifact.
+Playwright runs after deterministic documentation checks succeed, using a temporary Shiny instance, temporary DuckDB, synthetic rows, and temporary photo folders. It runs `catalog`, `record_sighting`, `my_sightings`, and `dashboard`, captures one video per workflow, publishes verified recordings into the guide, and also uploads videos and diagnostics as a 30-day GitHub Actions artifact.
 
 ```json
 {"base_url":"http://127.0.0.1:PORT","workflows":["catalog","record_sighting","my_sightings","dashboard"],"artifact_dir":"docs/playwright/artifacts","commit_sha":"CURRENT_COMMIT"}
 ```
 
-The user-guide placeholders remain unchanged while videos exist only as temporary Actions artifacts. A later publication step may replace a placeholder only after a real video has been copied to `docs/playwright/artifacts/` and recorded in the manifest. If a recording is missing, never fabricate a link.
+The publisher replaces a placeholder only after a real video has been copied to `docs/playwright/artifacts/` and recorded in `result.json` and the manifest. Newly contracted workflows receive placeholders automatically until a matching recording exists. If a recording is missing, never fabricate a link.
 
 ## 10. GitHub Pages
 

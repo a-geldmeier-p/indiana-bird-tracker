@@ -8,9 +8,8 @@ photos/
 reference-photos/
 work/
 .ci-temp/
-docs/playwright/artifacts/*
-!docs/playwright/artifacts/.gitkeep
-
+__pycache__/
+*.py[cod]
 # Playwright
 node_modules/
 /test-results/

@@ -2,7 +2,7 @@
 
 Indiana Bird Tracker is a local-first birding notebook. It keeps your catalog and sightings in DuckDB on your computer; it does not require a cloud account.
 
-> This Markdown guide is published through GitHub Pages. Playwright records short demonstrations during pull-request automation; placeholders remain until verified videos are promoted from temporary workflow artifacts into the published site.
+> This Markdown guide is published through GitHub Pages. Playwright records short demonstrations during pull-request automation; verified recordings are promoted into the published guide, while placeholders remain for workflows without a verified recording.
 
 ## Start the app
 
@@ -28,7 +28,13 @@ By default, the app uses `bird_tracker.duckdb`, `photos/`, and `reference-photos
 
 The catalog shows a user-supplied reference photo when one is available. Add files to the `reference-photos/` folder using a lower-case common-name slug, such as `american-coot.jpg` or `woodhouses-scrub-jay.png`. Supported formats are `.jpg`, `.jpeg`, and `.png`. Missing files show a placeholder rather than a broken image.
 
-<!-- VIDEO PLACEHOLDER: Catalog browsing and filtering (Playwright recording) -->
+<figure id="tutorial-catalog">
+  <video controls preload="metadata" aria-label="Catalog browsing and filtering tutorial">
+    <source src="docs/playwright/artifacts/catalog.webm" type="video/webm">
+    Your browser does not support embedded WebM video.
+  </video>
+  <figcaption>Catalog browsing and filtering tutorial.</figcaption>
+</figure>
 
 ## Record a sighting
 
@@ -36,12 +42,17 @@ The catalog shows a user-supplied reference photo when one is available. Add fil
 2. Choose a species from **Species**. The species reference preview appears below the selector.
 3. Enter the **Observation date** and **Observation time**.
 4. Enter a **Location** and **Indiana county**.
-5. Add optional notes.
-6. To attach a photo, select **Upload photo (optional)** and choose a JPEG, PNG, GIF, or WebP image. The app copies it into a safe species folder under `photos/`; image bytes are not stored in DuckDB.
-7. Alternatively, enter an optional photo path or URL.
-8. Select **Save sighting** and confirm the success message.
+5. To attach a photo, select **Upload photo (optional)** and choose a JPEG, PNG, GIF, or WebP image. The app copies it into a safe species folder under `photos/`; image bytes are not stored in DuckDB.
+6. Alternatively, enter an optional photo path or URL.
+7. Select **Save sighting** and confirm the success message.
 
-<!-- VIDEO PLACEHOLDER: Recording a sighting with a photo (Playwright recording) -->
+<figure id="tutorial-record_sighting">
+  <video controls preload="metadata" aria-label="Recording a sighting tutorial">
+    <source src="docs/playwright/artifacts/record_sighting.webm" type="video/webm">
+    Your browser does not support embedded WebM video.
+  </video>
+  <figcaption>Recording a sighting tutorial.</figcaption>
+</figure>
 
 ## Review and filter My Sightings
 
@@ -51,7 +62,13 @@ The catalog shows a user-supplied reference photo when one is available. Add fil
 4. Review the table of observations. Dates and times are shown in a readable local format.
 5. Open the **Sighting photos** section to view linked local images in a three-column fixed-size grid. Photos preserve their aspect ratio inside each box; missing files are reported clearly.
 
-<!-- VIDEO PLACEHOLDER: Filtering and reviewing My Sightings (Playwright recording) -->
+<figure id="tutorial-my_sightings">
+  <video controls preload="metadata" aria-label="Filtering and reviewing My Sightings tutorial">
+    <source src="docs/playwright/artifacts/my_sightings.webm" type="video/webm">
+    Your browser does not support embedded WebM video.
+  </video>
+  <figcaption>Filtering and reviewing My Sightings tutorial.</figcaption>
+</figure>
 
 ## View the dashboard
 
@@ -59,7 +76,13 @@ The catalog shows a user-supplied reference photo when one is available. Add fil
 2. Review **Total sightings** and **Distinct species**.
 3. Read the **Recent observations** table, including each species reference thumbnail and observation details.
 
-<!-- VIDEO PLACEHOLDER: Dashboard overview (Playwright recording) -->
+<figure id="tutorial-dashboard">
+  <video controls preload="metadata" aria-label="Dashboard overview tutorial">
+    <source src="docs/playwright/artifacts/dashboard.webm" type="video/webm">
+    Your browser does not support embedded WebM video.
+  </video>
+  <figcaption>Dashboard overview tutorial.</figcaption>
+</figure>
 
 ## Add or replace reference photos
 

@@ -6,6 +6,7 @@ import argparse
 import difflib
 import json
 import os
+import re
 import subprocess
 import sys
 import urllib.error
@@ -87,13 +88,57 @@ def contents_to_patch(files: dict[str, str]) -> str:
 
 
 def preserves_video_placeholders(patch: str) -> bool:
-    """Keep placeholders until a verified Playwright result manifest exists."""
-    if Path("docs/playwright/artifacts/result.json").exists():
-        return True
-    return not any(
-        line.startswith("-") and "VIDEO PLACEHOLDER:" in line
-        for line in patch.splitlines()
+    """Keep pending placeholders and existing verified video embeds.
+
+    A complete-file fallback may move a protected block.  Git represents that
+    move as a removal plus an identical addition, which is safe.  Reject only
+    protected content removed without an exact replacement in the patch.
+    """
+    protected = ("VIDEO PLACEHOLDER:", 'id="tutorial-', "docs/playwright/artifacts/")
+    lines = patch.splitlines()
+    added = {line[1:] for line in lines if line.startswith("+") and not line.startswith("+++")}
+    removed = {line[1:] for line in lines if line.startswith("-") and not line.startswith("---")}
+    return all(
+        line in added
+        for line in removed
+        if any(marker in line for marker in protected)
     )
+
+
+def protected_guide_blocks(guide: str) -> list[tuple[str, str]]:
+    """Return each protected tutorial block with the section that owns it."""
+    blocks = []
+    patterns = (
+        r"<!-- VIDEO PLACEHOLDER:.*?-->",
+        r'<figure id="tutorial-[^"]+">.*?</figure>',
+    )
+    for pattern in patterns:
+        for match in re.finditer(pattern, guide, re.DOTALL):
+            heading_matches = list(re.finditer(r"^## (.+)$", guide[: match.start()], re.MULTILINE))
+            heading = heading_matches[-1].group(1) if heading_matches else ""
+            blocks.append((heading, match.group(0)))
+    return blocks
+
+
+def restore_protected_guide_blocks(candidate: str) -> str:
+    """Keep recorded-video blocks while allowing the model to update surrounding prose."""
+    original = read_text(Path("USER_GUIDE.md"))
+    for heading, block in protected_guide_blocks(original):
+        if block in candidate:
+            continue
+        marker = f"## {heading}"
+        if marker in candidate:
+            start = candidate.index(marker)
+            next_heading = candidate.find("\n## ", start + len(marker))
+            insertion = len(candidate) if next_heading < 0 else next_heading
+            candidate = (
+                candidate[:insertion].rstrip()
+                + f"\n\n{block}\n"
+                + candidate[insertion:]
+            )
+        else:
+            candidate = candidate.rstrip() + f"\n\n{marker}\n\n{block}\n"
+    return candidate
 
 
 def request_file_contents(api_key: str, repository: str, pr_number: str, context: str, diff: str) -> str:
@@ -115,9 +160,70 @@ PR diff:\n{diff}\nCurrent files:\n{context}"""
         files = payload.get("files", {})
         if not isinstance(files, dict):
             raise ValueError("files must be an object")
-        return contents_to_patch({str(k): str(v) for k, v in files.items()})
+        normalized = {str(k): str(v) for k, v in files.items()}
+        if "USER_GUIDE.md" in normalized:
+            normalized["USER_GUIDE.md"] = restore_protected_guide_blocks(
+                normalized["USER_GUIDE.md"]
+            )
+        return contents_to_patch(normalized)
     except (json.JSONDecodeError, ValueError) as error:
         raise SystemExit(f"Documentation agent returned invalid structured content: {error}") from error
+
+
+def restore_deleted_roxygen_params(patch: str, pr_diff: str) -> str:
+    """Restore removed @param lines when the documented function still has that parameter.
+
+    This covers a mechanical documentation regression deterministically.  It
+    does not infer new documentation: it restores only an exact Roxygen line
+    deleted by the pull request, and only when the current function signature
+    still contains the named parameter.
+    """
+    deleted: dict[str, list[str]] = {}
+    current_path = None
+    for line in pr_diff.splitlines():
+        header = re.match(r"^diff --git a/(R/[^ ]+) b/", line)
+        if header:
+            current_path = header.group(1)
+            continue
+        if current_path and line.startswith("-#' @param "):
+            deleted.setdefault(current_path, []).append(line[1:])
+
+    replacements = {}
+    for name, lines in deleted.items():
+        if f"diff --git a/{name} b/{name}" in patch:
+            continue
+        path = Path(name)
+        if not path.exists():
+            continue
+        source = read_text(path)
+        updated = source
+        for roxygen_line in lines:
+            parameter = re.match(r"#' @param ([A-Za-z][A-Za-z0-9_.]*)\b", roxygen_line)
+            if not parameter or roxygen_line in updated or f"+{roxygen_line}" in patch:
+                continue
+            name_in_signature = parameter.group(1)
+            block_pattern = re.compile(
+                r"(?m)(?P<docs>(?:^#'.*\n)+)"
+                r"(?P<definition>^[A-Za-z][A-Za-z0-9_.]*\s*<-\s*function\((?P<args>[^)]*)\))"
+            )
+            for block in block_pattern.finditer(updated):
+                arguments = block.group("args")
+                if not re.search(rf"\b{re.escape(name_in_signature)}\s*(?:=|,|$)", arguments):
+                    continue
+                docs = block.group("docs")
+                insertion = docs.find("#' @return")
+                insertion = len(docs) if insertion < 0 else insertion
+                amended_docs = docs[:insertion] + roxygen_line + "\n" + docs[insertion:]
+                updated = (
+                    updated[: block.start("docs")]
+                    + amended_docs
+                    + updated[block.end("docs") :]
+                )
+                break
+        if updated != source:
+            replacements[name] = updated
+    restoration = contents_to_patch(replacements)
+    return patch + ("\n" if patch and restoration else "") + restoration
 
 
 def main() -> None:
@@ -166,9 +272,12 @@ Rules:
   or Playwright files. Do not add unrelated tests or documentation.
 - Make only changes supported by the PR diff. Do not invent features, links, videos,
   screenshots, or test results. Preserve existing Markdown structure and headings.
-- Preserve all four existing `VIDEO PLACEHOLDER:` comments in USER_GUIDE.md exactly.
-  They may be replaced only when `docs/playwright/artifacts/result.json` already
-  contains verified real video paths.
+- Treat deleted Roxygen fields, focused tests, README capabilities, NEWS entries,
+  user-guide steps, and workflow-inventory steps as stale-documentation gaps when
+  the corresponding implementation still exists. Restore or replace that coverage.
+- Preserve every existing `VIDEO PLACEHOLDER:` comment and published tutorial
+  `<figure>`/`docs/playwright/artifacts/` reference in USER_GUIDE.md exactly.
+  The deterministic Playwright publisher, not the model, replaces placeholders.
 - If a file does not need a truthful update, leave it unchanged. If none need updates,
   return an empty response.
 - Every changed file must have a complete `diff --git` header and valid hunk counts.
@@ -215,11 +324,20 @@ Patch:
             rebuilt = subprocess.run(
                 ["git", "apply", "--check"], input=patch, text=True, capture_output=True
             )
-            if rebuilt.returncode or not preserves_video_placeholders(patch):
+            if rebuilt.returncode:
                 raise SystemExit(
-                    "Documentation agent attempted to remove video placeholders "
-                    "without verified Playwright artifacts."
+                    "Documentation agent could not produce a valid protected-guide "
+                    f"fallback patch:\n{rebuilt.stderr}"
                 )
+    patch = restore_deleted_roxygen_params(patch, read_text(args.diff))
+    final_check = subprocess.run(
+        ["git", "apply", "--check"], input=patch, text=True, capture_output=True
+    )
+    if final_check.returncode:
+        raise SystemExit(
+            "Documentation patch plus deterministic Roxygen restoration is invalid:\n"
+            f"{final_check.stderr}"
+        )
     args.output.write_text(patch + ("\n" if patch else ""), encoding="utf-8")
 
 
