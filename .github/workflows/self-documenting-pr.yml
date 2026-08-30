@@ -145,9 +145,10 @@ jobs:
               --browser chromium \
               --no-sandbox \
               --isolated \
-              --host 127.0.0.1 \
+              --host 0.0.0.0 \
               --port 8931 \
               --output-dir /output \
+              --allowed-hosts 127.0.0.1,localhost \
               --allowed-origins http://127.0.0.1:3838
           for attempt in {1..30}; do
             docker inspect --format '{{.State.Running}}' bird-tracker-playwright-mcp 2>/dev/null | grep -qx true && exit 0
