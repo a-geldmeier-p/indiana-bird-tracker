@@ -86,12 +86,24 @@ def contents_to_patch(files: dict[str, str]) -> str:
     return "\n".join(chunks)
 
 
+def preserves_video_placeholders(patch: str) -> bool:
+    """Keep placeholders until a verified Playwright result manifest exists."""
+    if Path("docs/playwright/artifacts/result.json").exists():
+        return True
+    return not any(
+        line.startswith("-") and "VIDEO PLACEHOLDER:" in line
+        for line in patch.splitlines()
+    )
+
+
 def request_file_contents(api_key: str, repository: str, pr_number: str, context: str, diff: str) -> str:
     prompt = f"""You are documenting {repository}, PR #{pr_number}.
 Return ONLY a JSON object with this exact shape: {{\"files\": {{\"README.md\": \"full text\", \"NEWS.md\": \"full text\", \"USER_GUIDE.md\": \"full text\", \"WORKFLOW_INVENTORY.md\": \"full text\"}}}}.
 Include only files that need truthful updates. The values must be complete replacement file contents, not diffs.
 Also include complete updated Roxygen source files or tests only when required by the PR, using their repository paths as keys.
 Do not invent features, links, videos, screenshots, or test results.
+Preserve all four existing `VIDEO PLACEHOLDER:` comments in USER_GUIDE.md exactly unless
+`docs/playwright/artifacts/result.json` already contains verified real artifact paths.
 PR diff:\n{diff}\nCurrent files:\n{context}"""
     raw = request_patch(api_key, prompt)
     start = raw.find("{")
@@ -154,6 +166,9 @@ Rules:
   or Playwright files. Do not add unrelated tests or documentation.
 - Make only changes supported by the PR diff. Do not invent features, links, videos,
   screenshots, or test results. Preserve existing Markdown structure and headings.
+- Preserve all four existing `VIDEO PLACEHOLDER:` comments in USER_GUIDE.md exactly.
+  They may be replaced only when `docs/playwright/artifacts/result.json` already
+  contains verified real video paths.
 - If a file does not need a truthful update, leave it unchanged. If none need updates,
   return an empty response.
 - Every changed file must have a complete `diff --git` header and valid hunk counts.
@@ -193,6 +208,18 @@ Patch:
                         "Documentation agent could not produce a valid patch after "
                         f"structured retry:\n{rebuilt.stderr}"
                     )
+        if not preserves_video_placeholders(patch):
+            patch = request_file_contents(
+                api_key, args.repository, args.pr_number, context, read_text(args.diff)
+            )
+            rebuilt = subprocess.run(
+                ["git", "apply", "--check"], input=patch, text=True, capture_output=True
+            )
+            if rebuilt.returncode or not preserves_video_placeholders(patch):
+                raise SystemExit(
+                    "Documentation agent attempted to remove video placeholders "
+                    "without verified Playwright artifacts."
+                )
     args.output.write_text(patch + ("\n" if patch else ""), encoding="utf-8")
 
 
