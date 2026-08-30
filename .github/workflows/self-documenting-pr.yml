@@ -134,6 +134,8 @@ jobs:
         shell: bash
         run: |
           mkdir -p "$RUNNER_TEMP/mcp-output"
+          # The MCP host check compares the complete HTTP Host header, including
+          # the port. The Python client below calls 127.0.0.1:8931/mcp.
           docker run --detach --rm --init --pull always \
             --name bird-tracker-playwright-mcp \
             --network host \
@@ -143,12 +145,13 @@ jobs:
             /app/cli.js \
               --headless \
               --browser chromium \
+              --caps devtools \
               --no-sandbox \
               --isolated \
               --host 0.0.0.0 \
               --port 8931 \
               --output-dir /output \
-              --allowed-hosts 127.0.0.1,localhost \
+              --allowed-hosts 127.0.0.1:8931 \
               --allowed-origins http://127.0.0.1:3838
           for attempt in {1..30}; do
             docker inspect --format '{{.State.Running}}' bird-tracker-playwright-mcp 2>/dev/null | grep -qx true && exit 0
