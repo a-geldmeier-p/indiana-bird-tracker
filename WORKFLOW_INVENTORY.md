@@ -22,7 +22,6 @@ This inventory is the human-readable contract for the Playwright tutorial record
 - Enter required **Location** and **Indiana county** (`record-location`, `record-county`).
 - Optionally upload a supported image (`record-photo_upload`) or enter a path/URL (`record-photo_reference`).
 - After choosing a species, confirm the compact catalog reference preview appears; this is separate from the optional user upload.
-- Select **Save sighting** (`record-save_sighting`).
 - Confirm `record-save-status` reports success; also test a missing required value and confirm an understandable error.
 
 ## 3. Browse recorded sightings

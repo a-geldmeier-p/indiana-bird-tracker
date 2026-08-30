@@ -36,10 +36,9 @@ The catalog shows a user-supplied reference photo when one is available. Add fil
 2. Choose a species from **Species**. The species reference preview appears below the selector.
 3. Enter the **Observation date** and **Observation time**.
 4. Enter a **Location** and **Indiana county**.
-5. Add optional notes.
-6. To attach a photo, select **Upload photo (optional)** and choose a JPEG, PNG, GIF, or WebP image. The app copies it into a safe species folder under `photos/`; image bytes are not stored in DuckDB.
-7. Alternatively, enter an optional photo path or URL.
-8. Select **Save sighting** and confirm the success message.
+5. To attach a photo, select **Upload photo (optional)** and choose a JPEG, PNG, GIF, or WebP image. The app copies it into a safe species folder under `photos/`; image bytes are not stored in DuckDB.
+6. Alternatively, enter an optional photo path or URL.
+7. Select **Save sighting** and confirm the success message.
 
 <!-- VIDEO PLACEHOLDER: Recording a sighting with a photo (Playwright recording) -->
 

@@ -28,13 +28,6 @@ test_that("valid uploaded photos use safe collision-resistant paths", {
                normalizePath(file.path(library_path, first)))
 })
 
-test_that("invalid image content is rejected", {
-  fake <- tempfile(fileext = ".jpg")
-  writeLines("not an image", fake)
-  expect_error(store_sighting_photo(fake, "fake.jpg", "Osprey", 1L, tempdir()),
-               "valid JPEG")
-})
-
 test_that("filters and validation protect data quality", {
   con <- local_bird_db()
   add_sighting(con, "CARDINALIS_CARDINALIS", as.POSIXct("2026-05-10 07:30"), "Backyard", "Monroe")

@@ -6,7 +6,6 @@ A deliberately small, personal Shiny app packaged with a `{golem}`-compatible st
 
 - Search and filter a 425-record Indiana catalog with common name, scientific name, family group, status, and a brief range description.
 - Record a sighting with species, date/time, location, county, notes, and an optional photo upload or path/URL.
-- Filter saved sightings by species, county, and date range.
 - Review total sightings, distinct species, and recent observations.
 
 On **My sightings**, the date filter is an on/off slider. The date-range control is shown only while the slider is enabled; selecting **Filter sightings** applies the visible controls, and **Reset filters** restores all sightings.

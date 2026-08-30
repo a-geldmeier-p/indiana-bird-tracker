@@ -9,7 +9,6 @@
 - Added local reference-photo mapping, managed sighting-photo uploads, and a fixed three-column sighting-photo grid.
 - Fixed Windows path normalization so valid uploaded photos display from the managed library.
 - Updated the self-documenting pull-request workflow to run on selected pull-request events, separate application preflight checks from documentation, and use the pull-request number for both automatic and manually dispatched runs.
-- Updated workflow dependency setup to install `pak` from the configured R package repository.
 - Added a GitHub Actions Playwright job that seeds synthetic DuckDB and photo data, starts a temporary Shiny app, records the catalog, record-sighting, My Sightings, and dashboard tutorials, and uploads videos and diagnostics as a 30-day workflow artifact.
 
 ## Future maintenance
