@@ -170,6 +170,62 @@ PR diff:\n{diff}\nCurrent files:\n{context}"""
         raise SystemExit(f"Documentation agent returned invalid structured content: {error}") from error
 
 
+def restore_deleted_roxygen_params(patch: str, pr_diff: str) -> str:
+    """Restore removed @param lines when the documented function still has that parameter.
+
+    This covers a mechanical documentation regression deterministically.  It
+    does not infer new documentation: it restores only an exact Roxygen line
+    deleted by the pull request, and only when the current function signature
+    still contains the named parameter.
+    """
+    deleted: dict[str, list[str]] = {}
+    current_path = None
+    for line in pr_diff.splitlines():
+        header = re.match(r"^diff --git a/(R/[^ ]+) b/", line)
+        if header:
+            current_path = header.group(1)
+            continue
+        if current_path and line.startswith("-#' @param "):
+            deleted.setdefault(current_path, []).append(line[1:])
+
+    replacements = {}
+    for name, lines in deleted.items():
+        if f"diff --git a/{name} b/{name}" in patch:
+            continue
+        path = Path(name)
+        if not path.exists():
+            continue
+        source = read_text(path)
+        updated = source
+        for roxygen_line in lines:
+            parameter = re.match(r"#' @param ([A-Za-z][A-Za-z0-9_.]*)\b", roxygen_line)
+            if not parameter or roxygen_line in updated or f"+{roxygen_line}" in patch:
+                continue
+            name_in_signature = parameter.group(1)
+            block_pattern = re.compile(
+                r"(?m)(?P<docs>(?:^#'.*\n)+)"
+                r"(?P<definition>^[A-Za-z][A-Za-z0-9_.]*\s*<-\s*function\((?P<args>[^)]*)\))"
+            )
+            for block in block_pattern.finditer(updated):
+                arguments = block.group("args")
+                if not re.search(rf"\b{re.escape(name_in_signature)}\s*(?:=|,|$)", arguments):
+                    continue
+                docs = block.group("docs")
+                insertion = docs.find("#' @return")
+                insertion = len(docs) if insertion < 0 else insertion
+                amended_docs = docs[:insertion] + roxygen_line + "\n" + docs[insertion:]
+                updated = (
+                    updated[: block.start("docs")]
+                    + amended_docs
+                    + updated[block.end("docs") :]
+                )
+                break
+        if updated != source:
+            replacements[name] = updated
+    restoration = contents_to_patch(replacements)
+    return patch + ("\n" if patch and restoration else "") + restoration
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repository", required=True)
@@ -273,6 +329,15 @@ Patch:
                     "Documentation agent could not produce a valid protected-guide "
                     f"fallback patch:\n{rebuilt.stderr}"
                 )
+    patch = restore_deleted_roxygen_params(patch, read_text(args.diff))
+    final_check = subprocess.run(
+        ["git", "apply", "--check"], input=patch, text=True, capture_output=True
+    )
+    if final_check.returncode:
+        raise SystemExit(
+            "Documentation patch plus deterministic Roxygen restoration is invalid:\n"
+            f"{final_check.stderr}"
+        )
     args.output.write_text(patch + ("\n" if patch else ""), encoding="utf-8")
 
 
