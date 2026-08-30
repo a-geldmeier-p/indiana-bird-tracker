@@ -3,13 +3,17 @@ artifact_root: docs/playwright/artifacts
 workflows:
   - id: catalog
     video: docs/playwright/artifacts/catalog.webm
-    commit_sha: 8379a36f6e059120304f539f5991f0bd70b38506
+    poster: docs/playwright/artifacts/catalog.png
+    commit_sha: 09304dfc8ff6de85487577bd66f4df1ea338b646
   - id: record_sighting
     video: docs/playwright/artifacts/record_sighting.webm
-    commit_sha: 8379a36f6e059120304f539f5991f0bd70b38506
+    poster: docs/playwright/artifacts/record_sighting.png
+    commit_sha: 09304dfc8ff6de85487577bd66f4df1ea338b646
   - id: my_sightings
     video: docs/playwright/artifacts/my_sightings.webm
-    commit_sha: 8379a36f6e059120304f539f5991f0bd70b38506
+    poster: docs/playwright/artifacts/my_sightings.png
+    commit_sha: 09304dfc8ff6de85487577bd66f4df1ea338b646
   - id: dashboard
     video: docs/playwright/artifacts/dashboard.webm
-    commit_sha: 8379a36f6e059120304f539f5991f0bd70b38506
+    poster: docs/playwright/artifacts/dashboard.png
+    commit_sha: 09304dfc8ff6de85487577bd66f4df1ea338b646

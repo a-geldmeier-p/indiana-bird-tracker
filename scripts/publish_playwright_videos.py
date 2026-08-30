@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 from pathlib import Path
 
@@ -11,49 +12,42 @@ from pathlib import Path
 WORKFLOWS = (
     (
         "catalog",
-        "workflows-catalog-tutorial",
         "Catalog browsing and filtering",
         "<!-- VIDEO PLACEHOLDER: Catalog browsing and filtering (Playwright recording) -->",
     ),
     (
         "record_sighting",
-        "workflows-record-sighting-tutorial",
         "Recording a sighting",
         "<!-- VIDEO PLACEHOLDER: Recording a sighting with a photo (Playwright recording) -->",
     ),
     (
         "my_sightings",
-        "workflows-my-sightings-tutorial",
         "Filtering and reviewing My Sightings",
         "<!-- VIDEO PLACEHOLDER: Filtering and reviewing My Sightings (Playwright recording) -->",
     ),
     (
         "dashboard",
-        "workflows-dashboard-tutorial",
         "Dashboard overview",
         "<!-- VIDEO PLACEHOLDER: Dashboard overview (Playwright recording) -->",
     ),
 )
 
 
-def find_video(results: Path, directory_name: str) -> Path:
-    matches = [
-        path
-        for path in results.rglob("video.webm")
-        if directory_name in path.parent.name
-    ]
+def find_artifact(source_dir: Path, name: str) -> Path:
+    matches = list(source_dir.rglob(name))
     if len(matches) != 1:
         raise SystemExit(
-            f"Expected one video for {directory_name}, found {len(matches)}: {matches}"
+            f"Expected exactly one MCP artifact named {name}, found {len(matches)}: {matches}"
         )
     return matches[0]
 
 
 def video_block(workflow_id: str, title: str) -> str:
     path = f"docs/playwright/artifacts/{workflow_id}.webm"
+    poster = f"docs/playwright/artifacts/{workflow_id}.png"
     return (
         f'<figure id="tutorial-{workflow_id}">\n'
-        f'  <video controls preload="metadata" aria-label="{title} tutorial">\n'
+        f'  <video controls preload="metadata" poster="{poster}" aria-label="{title} tutorial">\n'
         f'    <source src="{path}" type="video/webm">\n'
         "    Your browser does not support embedded WebM video.\n"
         "  </video>\n"
@@ -62,9 +56,36 @@ def video_block(workflow_id: str, title: str) -> str:
     )
 
 
+def add_recording_to_manifest(
+    manifest: str, workflow_id: str, video: Path, poster: Path, commit_sha: str
+) -> str:
+    """Keep contract metadata and add recording metadata to one workflow entry."""
+    pattern = re.compile(
+        rf"^  - id: {re.escape(workflow_id)}\s*$.*?(?=^  - id:|\Z)",
+        re.MULTILINE | re.DOTALL,
+    )
+    match = pattern.search(manifest)
+    if not match:
+        raise SystemExit(f"Manifest is missing workflow: {workflow_id}")
+
+    retained = [
+        line
+        for line in match.group(0).rstrip().splitlines()
+        if not re.match(r"^    (video|poster|commit_sha):", line)
+    ]
+    retained.extend(
+        [
+            f"    video: {video.as_posix()}",
+            f"    poster: {poster.as_posix()}",
+            f"    commit_sha: {commit_sha}",
+        ]
+    )
+    return manifest[: match.start()] + "\n".join(retained) + "\n" + manifest[match.end() :]
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--results", type=Path, default=Path("test-results"))
+    parser.add_argument("--source-dir", type=Path, required=True)
     parser.add_argument("--artifact-dir", type=Path, default=Path("docs/playwright/artifacts"))
     parser.add_argument("--guide", type=Path, default=Path("USER_GUIDE.md"))
     parser.add_argument("--manifest", type=Path, default=Path("docs/playwright/manifest.yml"))
@@ -77,12 +98,15 @@ def main() -> None:
         keep_file.unlink()
     guide = args.guide.read_text(encoding="utf-8")
     results = []
-    manifest_lines = ["version: 1", "artifact_root: docs/playwright/artifacts", "workflows:"]
+    manifest = args.manifest.read_text(encoding="utf-8")
 
-    for workflow_id, result_dir, title, placeholder in WORKFLOWS:
-        source = find_video(args.results, result_dir)
+    for workflow_id, title, placeholder in WORKFLOWS:
+        source_video = find_artifact(args.source_dir, f"{workflow_id}.webm")
+        source_poster = find_artifact(args.source_dir, f"{workflow_id}.png")
         destination = args.artifact_dir / f"{workflow_id}.webm"
-        shutil.copy2(source, destination)
+        poster_destination = args.artifact_dir / f"{workflow_id}.png"
+        shutil.copy2(source_video, destination)
+        shutil.copy2(source_poster, poster_destination)
 
         block = video_block(workflow_id, title)
         existing_start = f'<figure id="tutorial-{workflow_id}">'
@@ -99,24 +123,21 @@ def main() -> None:
                 "workflow": workflow_id,
                 "commit_sha": args.commit_sha,
                 "video": relative,
+                "poster": poster_destination.as_posix(),
             }
         )
-        manifest_lines.extend(
-            [
-                f"  - id: {workflow_id}",
-                f"    video: {relative}",
-                f"    commit_sha: {args.commit_sha}",
-            ]
+        manifest = add_recording_to_manifest(
+            manifest, workflow_id, destination, poster_destination, args.commit_sha
         )
 
     args.guide.write_text(guide, encoding="utf-8")
-    args.manifest.write_text("\n".join(manifest_lines) + "\n", encoding="utf-8")
+    args.manifest.write_text(manifest.rstrip() + "\n", encoding="utf-8")
     (args.artifact_dir / "result.json").write_text(
         json.dumps({"commit_sha": args.commit_sha, "workflows": results}, indent=2) + "\n",
         encoding="utf-8",
     )
 
-    print("Published four verified Playwright videos into USER_GUIDE.md.")
+    print("Published four verified Playwright MCP videos and posters into USER_GUIDE.md.")
 
 
 if __name__ == "__main__":

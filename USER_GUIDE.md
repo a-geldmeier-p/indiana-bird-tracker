@@ -2,7 +2,7 @@
 
 Indiana Bird Tracker is a local-first birding notebook. It keeps your catalog and sightings in DuckDB on your computer; it does not require a cloud account.
 
-> This Markdown guide is published through GitHub Pages. Playwright records short demonstrations during pull-request automation; verified recordings are promoted into the published guide, while placeholders remain for workflows without a verified recording.
+> This Markdown guide is published through GitHub Pages. A deterministic Python client drives the official Playwright MCP server during pull-request automation to record short demonstrations; verified recordings are promoted into the published guide, while placeholders remain for workflows without a verified recording.
 
 ## Start the app
 

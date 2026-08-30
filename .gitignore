@@ -10,10 +10,8 @@ work/
 .ci-temp/
 __pycache__/
 *.py[cod]
-# Playwright
+# Leftover local files from the retired Node Playwright setup stay untracked.
 node_modules/
 /test-results/
 /playwright-report/
 /blob-report/
-/playwright/.cache/
-/playwright/.auth/

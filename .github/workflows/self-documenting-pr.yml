@@ -69,46 +69,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Request allowed documentation edits
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          pr="${{ github.event.pull_request.number || inputs.pr_number }}"
-          gh pr diff "$pr" > "$RUNNER_TEMP/pr.diff"
-          python scripts/document_pr_agent.py --repository "$GITHUB_REPOSITORY" --pr-number "$pr" --policy .github/agents/documentation-policy.yml --diff "$RUNNER_TEMP/pr.diff" --output "$RUNNER_TEMP/documentation.patch"
-          test ! -s "$RUNNER_TEMP/documentation.patch" || git apply --whitespace=fix "$RUNNER_TEMP/documentation.patch"
-          python scripts/sync_workflow_placeholders.py
-      - name: Enforce documentation allow-list
-        run: |
-          changed=$(git diff --name-only)
-          unexpected=$(echo "$changed" | grep -Ev '^(R/|man/|tests/testthat/|README.md$|NEWS.md$|USER_GUIDE.md$|WORKFLOW_INVENTORY.md$|docs/playwright/(manifest.yml|artifacts/))' || true)
-          test -z "$unexpected" || { echo "$unexpected"; exit 1; }
-      - name: Post-agent documentation checks
-        run: |
-          git diff --binary -- R man NAMESPACE > "$RUNNER_TEMP/before-roxygen.diff"
-          Rscript -e 'roxygen2::roxygenise()'
-          git diff --binary -- R man NAMESPACE > "$RUNNER_TEMP/after-roxygen.diff"
-          diff -u "$RUNNER_TEMP/before-roxygen.diff" "$RUNNER_TEMP/after-roxygen.diff"
-          Rscript -e 'rcmdcheck::rcmdcheck(args = "--no-manual", error_on = "error")'
-          Rscript scripts/update_workflow_inventory.R
-          Rscript scripts/check_docs.R
-          Rscript scripts/shiny_smoke.R
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: '24'
-          cache: npm
-
-      - name: Install Playwright
-        run: |
-          npm ci
-          npx playwright install --with-deps chromium
+      - name: Install the Python MCP client
+        run: python -m pip install --disable-pip-version-check -r requirements-mcp.txt
 
       - name: Seed demo data and start Shiny
         shell: bash
         run: |
+          R CMD INSTALL .
           mkdir -p "$RUNNER_TEMP/bird-tracker/photos"
           mkdir -p "$RUNNER_TEMP/bird-tracker/reference-photos"
           Rscript scripts/seed_playwright_demo.R \
@@ -138,12 +106,85 @@ jobs:
           cat "$RUNNER_TEMP/shiny-playwright.log"
           exit 1
 
-      - name: Record and publish tutorial workflows
-        env:
-          BASE_URL: http://127.0.0.1:3838
+      - name: Start the isolated Playwright MCP server
+        shell: bash
         run: |
-          npm run test:tutorials
-          python scripts/publish_playwright_videos.py --commit-sha "$(git rev-parse HEAD)"
+          mkdir -p "$RUNNER_TEMP/mcp-output"
+          chmod 0777 "$RUNNER_TEMP/mcp-output"
+          # The official container runs as its unprivileged `node` user. The
+          # temporary bind mount must therefore be writable by that user.
+          # Video filenames are resolved against the container working directory,
+          # so /output is both the working directory and the MCP output directory.
+          # The MCP host check compares the complete HTTP Host header, including
+          # the port. The Python client below calls 127.0.0.1:8931/mcp.
+          docker run --detach --rm --init --pull always \
+            --name bird-tracker-playwright-mcp \
+            --network host \
+            --volume "$RUNNER_TEMP/mcp-output:/output" \
+            --workdir /output \
+            --entrypoint node \
+            mcr.microsoft.com/playwright/mcp \
+            /app/cli.js \
+              --headless \
+              --browser chromium \
+              --caps devtools \
+              --no-sandbox \
+              --isolated \
+              --host 0.0.0.0 \
+              --port 8931 \
+              --output-dir /output \
+              --allowed-hosts 127.0.0.1:8931 \
+              --allowed-origins http://127.0.0.1:3838
+          for attempt in {1..30}; do
+            docker inspect --format '{{.State.Running}}' bird-tracker-playwright-mcp 2>/dev/null | grep -qx true && exit 0
+            sleep 1
+          done
+          docker logs bird-tracker-playwright-mcp || true
+          exit 1
+
+      - name: Record tutorials through Playwright MCP
+        shell: bash
+        run: |
+          python scripts/record_tutorials_mcp.py \
+            --mcp-url http://127.0.0.1:8931/mcp \
+            --base-url http://127.0.0.1:3838 \
+            --output-dir "$RUNNER_TEMP/mcp-output"
+
+      # No paid API request occurs until all four MCP videos and posters exist.
+      - name: Request allowed documentation edits
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pr="${{ github.event.pull_request.number || inputs.pr_number }}"
+          gh pr diff "$pr" > "$RUNNER_TEMP/pr.diff"
+          python scripts/document_pr_agent.py --repository "$GITHUB_REPOSITORY" --pr-number "$pr" --policy .github/agents/documentation-policy.yml --diff "$RUNNER_TEMP/pr.diff" --output "$RUNNER_TEMP/documentation.patch"
+          test ! -s "$RUNNER_TEMP/documentation.patch" || git apply --whitespace=fix "$RUNNER_TEMP/documentation.patch"
+          python scripts/sync_workflow_placeholders.py
+
+      - name: Enforce documentation allow-list
+        run: |
+          changed=$(git diff --name-only)
+          unexpected=$(echo "$changed" | grep -Ev '^(R/|man/|tests/testthat/|README.md$|NEWS.md$|USER_GUIDE.md$|WORKFLOW_INVENTORY.md$|docs/playwright/(manifest.yml|artifacts/))' || true)
+          test -z "$unexpected" || { echo "$unexpected"; exit 1; }
+
+      - name: Post-agent documentation checks
+        run: |
+          git diff --binary -- R man NAMESPACE > "$RUNNER_TEMP/before-roxygen.diff"
+          Rscript -e 'roxygen2::roxygenise()'
+          git diff --binary -- R man NAMESPACE > "$RUNNER_TEMP/after-roxygen.diff"
+          diff -u "$RUNNER_TEMP/before-roxygen.diff" "$RUNNER_TEMP/after-roxygen.diff"
+          Rscript -e 'rcmdcheck::rcmdcheck(args = "--no-manual", error_on = "error")'
+          Rscript scripts/update_workflow_inventory.R
+          Rscript scripts/check_docs.R
+          Rscript scripts/shiny_smoke.R
+
+      - name: Publish verified MCP tutorials
+        shell: bash
+        run: |
+          python scripts/publish_playwright_videos.py \
+            --source-dir "$RUNNER_TEMP/mcp-output" \
+            --commit-sha "$(git rev-parse HEAD)"
           python scripts/sync_workflow_placeholders.py
           Rscript scripts/check_docs.R
 
@@ -157,14 +198,21 @@ jobs:
           # workflow runs for pushes made with this token.
           git push origin "HEAD:${{ needs.validate-pr.outputs.head_ref }}"
 
+      - name: Collect Playwright MCP logs
+        if: always()
+        shell: bash
+        run: |
+          docker logs bird-tracker-playwright-mcp > "$RUNNER_TEMP/playwright-mcp.log" 2>&1 || true
+          docker rm --force bird-tracker-playwright-mcp 2>/dev/null || true
+
       - name: Upload tutorial videos and diagnostics
         if: always()
         uses: actions/upload-artifact@v5
         with:
-          name: tutorial-videos-${{ github.sha }}
+          name: mcp-tutorial-videos-${{ github.sha }}
           path: |
-            test-results/
-            playwright-report/
+            ${{ runner.temp }}/mcp-output/
             ${{ runner.temp }}/shiny-playwright.log
+            ${{ runner.temp }}/playwright-mcp.log
           if-no-files-found: warn
           retention-days: 30

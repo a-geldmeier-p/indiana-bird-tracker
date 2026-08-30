@@ -45,7 +45,7 @@ This inventory is the human-readable contract for the Playwright tutorial record
 
 ## Tutorial recording fixture
 
-The pull-request workflow uses `scripts/seed_playwright_demo.R` with a temporary DuckDB path and temporary photo and reference-photo folders. The script seeds four synthetic sightings and synthetic SVG photo fixtures, then starts Shiny on the local workflow port. Playwright records the `catalog`, `record_sighting`, `my_sightings`, and `dashboard` workflows serially with Chromium video enabled. After recording, verified videos are copied into `docs/playwright/artifacts/`, recorded in `docs/playwright/manifest.yml` and `docs/playwright/artifacts/result.json`, and embedded in the corresponding user-guide sections. Videos and diagnostics are also uploaded as a temporary 30-day workflow artifact.
+The pull-request workflow uses `scripts/seed_playwright_demo.R` with a temporary DuckDB path and temporary photo and reference-photo folders. The script seeds four synthetic sightings and synthetic SVG photo fixtures, then starts Shiny on the local workflow port. A deterministic Python MCP client drives the four workflows—`catalog`, `record_sighting`, `my_sightings`, and `dashboard`—serially through an isolated official Playwright MCP Docker server using Chromium. Each workflow must produce a non-empty WebM video and PNG poster before publication. After recording, verified videos and posters are copied into `docs/playwright/artifacts/`, recorded in `docs/playwright/manifest.yml` and `docs/playwright/artifacts/result.json`, and embedded in the corresponding user-guide sections. Videos and diagnostics are also uploaded as a temporary 30-day workflow artifact.
 
 ## 5. Repository pull-request workflows
 
@@ -53,6 +53,6 @@ The pull-request workflow uses `scripts/seed_playwright_demo.R` with a temporary
 - The workflow validates the pull request head repository, checks out the head revision, and runs an application preflight that installs the package, runs local `testthat` tests, and performs the Shiny smoke check.
 - After preflight, the documentation job obtains the pull-request diff, asks the documentation agent for an allow-listed patch, and checks that patch before applying it.
 - The manual-dispatch path uses the supplied pull-request number; pull-request events use the event's pull-request number.
-- After documentation checks succeed, the same job starts a temporary seeded Shiny instance, runs the four Playwright workflows, publishes verified recordings and synchronized placeholders, and rechecks the documentation.
-- The workflow commits reviewed documentation, manifest, and published recording changes to the pull-request branch when there are changes, then uploads videos and diagnostics when the job completes.
+- After documentation checks succeed, the same job starts a temporary seeded Shiny instance, starts the isolated Playwright MCP server, runs the four deterministic MCP workflows, publishes verified recordings and synchronized placeholders, and rechecks the documentation.
+- The workflow commits reviewed documentation, manifest, and published recording changes to the pull-request branch when there are changes, then uploads MCP output and diagnostics when the job completes.
 - The former `.github/workflows/pr-check.yml` workflow has been removed; its application installation, test, and Shiny smoke-check commands are now part of the self-documenting workflow's preflight job.
