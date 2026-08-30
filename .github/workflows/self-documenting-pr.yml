@@ -113,12 +113,15 @@ jobs:
           chmod 0777 "$RUNNER_TEMP/mcp-output"
           # The official container runs as its unprivileged `node` user. The
           # temporary bind mount must therefore be writable by that user.
+          # Video filenames are resolved against the container working directory,
+          # so /output is both the working directory and the MCP output directory.
           # The MCP host check compares the complete HTTP Host header, including
           # the port. The Python client below calls 127.0.0.1:8931/mcp.
           docker run --detach --rm --init --pull always \
             --name bird-tracker-playwright-mcp \
             --network host \
             --volume "$RUNNER_TEMP/mcp-output:/output" \
+            --workdir /output \
             --entrypoint node \
             mcr.microsoft.com/playwright/mcp \
             /app/cli.js \
