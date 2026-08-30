@@ -12,14 +12,6 @@
 ^reference-photos$
 ^\.github$
 ^docs/playwright/artifacts$
-^node_modules$
-^package\.json$
-^package-lock\.json$
-^playwright\.config\.ts$
-^playwright-tests$
-^test-results$
-^playwright-report$
-^blob-report$
 ^docs$
 ^scripts$
 ^USER_GUIDE\.md$

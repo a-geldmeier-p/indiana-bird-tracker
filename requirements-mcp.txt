@@ -1,0 +1,3 @@
+# Python client for the official Playwright MCP server.
+# The server itself runs in an ephemeral Docker container on the GitHub runner.
+mcp>=1.25,<2
