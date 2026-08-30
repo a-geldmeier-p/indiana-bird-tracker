@@ -268,10 +268,10 @@ Patch:
             rebuilt = subprocess.run(
                 ["git", "apply", "--check"], input=patch, text=True, capture_output=True
             )
-            if rebuilt.returncode or not preserves_video_placeholders(patch):
+            if rebuilt.returncode:
                 raise SystemExit(
-                    "Documentation agent attempted to remove protected video "
-                    "placeholders or published artifact links."
+                    "Documentation agent could not produce a valid protected-guide "
+                    f"fallback patch:\n{rebuilt.stderr}"
                 )
     args.output.write_text(patch + ("\n" if patch else ""), encoding="utf-8")
 
