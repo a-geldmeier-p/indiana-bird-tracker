@@ -102,18 +102,38 @@ async (page) => {
 }
 
 
-async def call(session: ClientSession, tool: str, arguments: dict) -> None:
+async def call(session: ClientSession, tool: str, arguments: dict):
     result = await session.call_tool(tool, arguments)
     if result.isError:
         raise RuntimeError(f"Playwright MCP tool {tool} failed: {result.content}")
+    return result
 
 
-def require_artifact(output_dir: Path, name: str) -> None:
-    matches = list(output_dir.rglob(name))
-    if len(matches) != 1:
-        raise RuntimeError(
-            f"Expected exactly one MCP artifact named {name}; found {matches}."
-        )
+def result_text(result) -> str:
+    return " ".join(
+        block.text for block in result.content if getattr(block, "text", None)
+    )
+
+
+async def wait_for_artifact(
+    output_dir: Path, name: str, stop_response: str = "", timeout: float = 15
+) -> Path:
+    deadline = asyncio.get_running_loop().time() + timeout
+    while asyncio.get_running_loop().time() < deadline:
+        matches = list(output_dir.rglob(name))
+        if len(matches) == 1 and matches[0].stat().st_size > 0:
+            return matches[0]
+        await asyncio.sleep(0.5)
+
+    files = sorted(
+        str(path.relative_to(output_dir))
+        for path in output_dir.rglob("*")
+        if path.is_file()
+    )
+    raise RuntimeError(
+        f"Expected one non-empty MCP artifact named {name}. "
+        f"Files present: {files}. MCP stop response: {stop_response!r}"
+    )
 
 
 async def record(mcp_url: str, output_dir: Path, base_url: str) -> None:
@@ -148,10 +168,12 @@ async def record(mcp_url: str, output_dir: Path, base_url: str) -> None:
                         {"filename": f"{workflow_id}.png", "fullPage": False, "scale": "css"},
                     )
                 finally:
-                    await call(session, "browser_stop_video", {})
-                await asyncio.sleep(1)
-                require_artifact(output_dir, f"{workflow_id}.webm")
-                require_artifact(output_dir, f"{workflow_id}.png")
+                    stop_result = await call(session, "browser_stop_video", {})
+                stop_response = result_text(stop_result)
+                await wait_for_artifact(
+                    output_dir, f"{workflow_id}.webm", stop_response=stop_response
+                )
+                await wait_for_artifact(output_dir, f"{workflow_id}.png")
 
 
 def main() -> None:

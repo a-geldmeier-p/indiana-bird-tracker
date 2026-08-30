@@ -69,31 +69,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Request allowed documentation edits
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          pr="${{ github.event.pull_request.number || inputs.pr_number }}"
-          gh pr diff "$pr" > "$RUNNER_TEMP/pr.diff"
-          python scripts/document_pr_agent.py --repository "$GITHUB_REPOSITORY" --pr-number "$pr" --policy .github/agents/documentation-policy.yml --diff "$RUNNER_TEMP/pr.diff" --output "$RUNNER_TEMP/documentation.patch"
-          test ! -s "$RUNNER_TEMP/documentation.patch" || git apply --whitespace=fix "$RUNNER_TEMP/documentation.patch"
-          python scripts/sync_workflow_placeholders.py
-      - name: Enforce documentation allow-list
-        run: |
-          changed=$(git diff --name-only)
-          unexpected=$(echo "$changed" | grep -Ev '^(R/|man/|tests/testthat/|README.md$|NEWS.md$|USER_GUIDE.md$|WORKFLOW_INVENTORY.md$|docs/playwright/(manifest.yml|artifacts/))' || true)
-          test -z "$unexpected" || { echo "$unexpected"; exit 1; }
-      - name: Post-agent documentation checks
-        run: |
-          git diff --binary -- R man NAMESPACE > "$RUNNER_TEMP/before-roxygen.diff"
-          Rscript -e 'roxygen2::roxygenise()'
-          git diff --binary -- R man NAMESPACE > "$RUNNER_TEMP/after-roxygen.diff"
-          diff -u "$RUNNER_TEMP/before-roxygen.diff" "$RUNNER_TEMP/after-roxygen.diff"
-          Rscript -e 'rcmdcheck::rcmdcheck(args = "--no-manual", error_on = "error")'
-          Rscript scripts/update_workflow_inventory.R
-          Rscript scripts/check_docs.R
-          Rscript scripts/shiny_smoke.R
 
       - name: Install the Python MCP client
         run: python -m pip install --disable-pip-version-check -r requirements-mcp.txt
@@ -101,6 +76,7 @@ jobs:
       - name: Seed demo data and start Shiny
         shell: bash
         run: |
+          R CMD INSTALL .
           mkdir -p "$RUNNER_TEMP/bird-tracker/photos"
           mkdir -p "$RUNNER_TEMP/bird-tracker/reference-photos"
           Rscript scripts/seed_playwright_demo.R \
@@ -134,6 +110,9 @@ jobs:
         shell: bash
         run: |
           mkdir -p "$RUNNER_TEMP/mcp-output"
+          chmod 0777 "$RUNNER_TEMP/mcp-output"
+          # The official container runs as its unprivileged `node` user. The
+          # temporary bind mount must therefore be writable by that user.
           # The MCP host check compares the complete HTTP Host header, including
           # the port. The Python client below calls 127.0.0.1:8931/mcp.
           docker run --detach --rm --init --pull always \
@@ -160,13 +139,46 @@ jobs:
           docker logs bird-tracker-playwright-mcp || true
           exit 1
 
-      - name: Record and publish tutorials through Playwright MCP
+      - name: Record tutorials through Playwright MCP
         shell: bash
         run: |
           python scripts/record_tutorials_mcp.py \
             --mcp-url http://127.0.0.1:8931/mcp \
             --base-url http://127.0.0.1:3838 \
             --output-dir "$RUNNER_TEMP/mcp-output"
+
+      # No paid API request occurs until all four MCP videos and posters exist.
+      - name: Request allowed documentation edits
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pr="${{ github.event.pull_request.number || inputs.pr_number }}"
+          gh pr diff "$pr" > "$RUNNER_TEMP/pr.diff"
+          python scripts/document_pr_agent.py --repository "$GITHUB_REPOSITORY" --pr-number "$pr" --policy .github/agents/documentation-policy.yml --diff "$RUNNER_TEMP/pr.diff" --output "$RUNNER_TEMP/documentation.patch"
+          test ! -s "$RUNNER_TEMP/documentation.patch" || git apply --whitespace=fix "$RUNNER_TEMP/documentation.patch"
+          python scripts/sync_workflow_placeholders.py
+
+      - name: Enforce documentation allow-list
+        run: |
+          changed=$(git diff --name-only)
+          unexpected=$(echo "$changed" | grep -Ev '^(R/|man/|tests/testthat/|README.md$|NEWS.md$|USER_GUIDE.md$|WORKFLOW_INVENTORY.md$|docs/playwright/(manifest.yml|artifacts/))' || true)
+          test -z "$unexpected" || { echo "$unexpected"; exit 1; }
+
+      - name: Post-agent documentation checks
+        run: |
+          git diff --binary -- R man NAMESPACE > "$RUNNER_TEMP/before-roxygen.diff"
+          Rscript -e 'roxygen2::roxygenise()'
+          git diff --binary -- R man NAMESPACE > "$RUNNER_TEMP/after-roxygen.diff"
+          diff -u "$RUNNER_TEMP/before-roxygen.diff" "$RUNNER_TEMP/after-roxygen.diff"
+          Rscript -e 'rcmdcheck::rcmdcheck(args = "--no-manual", error_on = "error")'
+          Rscript scripts/update_workflow_inventory.R
+          Rscript scripts/check_docs.R
+          Rscript scripts/shiny_smoke.R
+
+      - name: Publish verified MCP tutorials
+        shell: bash
+        run: |
           python scripts/publish_playwright_videos.py \
             --source-dir "$RUNNER_TEMP/mcp-output" \
             --commit-sha "$(git rev-parse HEAD)"
