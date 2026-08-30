@@ -1,25 +1,29 @@
 {
-  "commit_sha": "8379a36f6e059120304f539f5991f0bd70b38506",
+  "commit_sha": "09304dfc8ff6de85487577bd66f4df1ea338b646",
   "workflows": [
     {
       "workflow": "catalog",
-      "commit_sha": "8379a36f6e059120304f539f5991f0bd70b38506",
-      "video": "docs/playwright/artifacts/catalog.webm"
+      "commit_sha": "09304dfc8ff6de85487577bd66f4df1ea338b646",
+      "video": "docs/playwright/artifacts/catalog.webm",
+      "poster": "docs/playwright/artifacts/catalog.png"
     },
     {
       "workflow": "record_sighting",
-      "commit_sha": "8379a36f6e059120304f539f5991f0bd70b38506",
-      "video": "docs/playwright/artifacts/record_sighting.webm"
+      "commit_sha": "09304dfc8ff6de85487577bd66f4df1ea338b646",
+      "video": "docs/playwright/artifacts/record_sighting.webm",
+      "poster": "docs/playwright/artifacts/record_sighting.png"
     },
     {
       "workflow": "my_sightings",
-      "commit_sha": "8379a36f6e059120304f539f5991f0bd70b38506",
-      "video": "docs/playwright/artifacts/my_sightings.webm"
+      "commit_sha": "09304dfc8ff6de85487577bd66f4df1ea338b646",
+      "video": "docs/playwright/artifacts/my_sightings.webm",
+      "poster": "docs/playwright/artifacts/my_sightings.png"
     },
     {
       "workflow": "dashboard",
-      "commit_sha": "8379a36f6e059120304f539f5991f0bd70b38506",
-      "video": "docs/playwright/artifacts/dashboard.webm"
+      "commit_sha": "09304dfc8ff6de85487577bd66f4df1ea338b646",
+      "video": "docs/playwright/artifacts/dashboard.webm",
+      "poster": "docs/playwright/artifacts/dashboard.png"
     }
   ]
 }

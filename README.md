@@ -1,6 +1,6 @@
 # Indiana Bird Tracker
 
-A deliberately small, personal Shiny app packaged with a `{golem}`-compatible structure. It stores sightings locally in DuckDB, provides a source-documented Indiana bird catalog, and keeps the UI/workflows stable enough to support browser-tested tutorial recordings.
+A deliberately small, personal Shiny app packaged with a `{golem}`-compatible structure. It stores sightings locally in DuckDB, provides a source-documented Indiana bird catalog, and keeps the UI/workflows stable enough to support browser-tested tutorial recordings through Playwright MCP.
 
 ## What it does
 
@@ -26,8 +26,8 @@ Accordingly, this is a complete snapshot of the cited DNR table, not a claim to 
 
 ## Setup and run
 
-See the [hosted user guide](https://a-geldmeier-p.github.io/indiana-bird-tracker/) for step-by-step workflows. The guide contains four reserved video sections. Pull-request automation records tutorial videos with synthetic data, publishes verified recordings into `docs/playwright/artifacts/`, and updates the guide and recording manifest when recordings are available. The source is [USER_GUIDE.md](USER_GUIDE.md).
-Release notes are kept in [NEWS.md](NEWS.md). The self-documenting pull-request workflow can update documentation after its application preflight, record the catalog, record-sighting, My Sightings, and dashboard tutorials, and publish verified recordings.
+See the [hosted user guide](https://a-geldmeier-p.github.io/indiana-bird-tracker/) for step-by-step workflows. The guide contains four reserved video sections. Pull-request automation uses a deterministic Python client with the official Playwright MCP server in an isolated Docker container to record tutorial videos; verified recordings and poster images are promoted into `docs/playwright/artifacts/`, and the guide and recording manifest are updated when recordings are available. The source is [USER_GUIDE.md](USER_GUIDE.md).
+Release notes are kept in [NEWS.md](NEWS.md). The self-documenting pull-request workflow can update documentation after its application preflight, record the catalog, record-sighting, My Sightings, and dashboard tutorials through Playwright MCP, and publish verified recordings.
 
 Install the package dependencies, then install this package:
 

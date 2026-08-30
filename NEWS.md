@@ -10,9 +10,10 @@
 - Fixed Windows path normalization so valid uploaded photos display from the managed library.
 - Updated the self-documenting pull-request workflow to run on selected pull-request events, separate application preflight checks from documentation, and use the pull-request number for both automatic and manually dispatched runs.
 - Updated workflow dependency setup to install `pak` from the configured R package repository.
-- Added a GitHub Actions Playwright job that seeds synthetic DuckDB and photo data, starts a temporary Shiny app, records the catalog, record-sighting, My Sightings, and dashboard tutorials, and uploads videos and diagnostics as a 30-day workflow artifact.
-- Added publication of verified Playwright recordings into `docs/playwright/artifacts/`, the recording manifest, and the user guide during the documentation workflow.
+- Replaced the Node Playwright test setup with the Python MCP client and an isolated official Playwright MCP Docker server for deterministic Chromium tutorial recording.
+- Added MCP recording of the catalog, record-sighting, My Sightings, and dashboard tutorials, including verified WebM videos and PNG poster images, with videos and diagnostics uploaded as a 30-day workflow artifact.
+- Added publication of verified Playwright MCP recordings and poster images into `docs/playwright/artifacts/`, the recording manifest, and the user guide during the documentation workflow.
 
 ## Future maintenance
 
-Tutorial placeholders remain until verified recordings are available. When recordings are successfully published, the workflow copies them into `docs/playwright/artifacts/`, records their paths and commit in the manifest, updates the corresponding user-guide sections, and commits those reviewed documentation artifacts.
+Tutorial placeholders remain until verified recordings are available. When recordings are successfully published, the workflow copies the videos and poster images into `docs/playwright/artifacts/`, records their paths and commit in the manifest, updates the corresponding user-guide sections, and commits those reviewed documentation artifacts.
