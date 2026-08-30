@@ -147,6 +147,7 @@ async def record(mcp_url: str, output_dir: Path, base_url: str) -> None:
             required = {
                 "browser_start_video",
                 "browser_stop_video",
+                "browser_video_show_actions",
                 "browser_run_code_unsafe",
                 "browser_take_screenshot",
             }
@@ -161,6 +162,15 @@ async def record(mcp_url: str, output_dir: Path, base_url: str) -> None:
                     {"filename": f"{workflow_id}.webm", "size": {"width": 1280, "height": 800}},
                 )
                 try:
+                    await call(
+                        session,
+                        "browser_video_show_actions",
+                        {
+                            "duration": 650,
+                            "position": "top-right",
+                            "cursor": "pointer",
+                        },
+                    )
                     await call(session, "browser_run_code_unsafe", {"code": code})
                     await call(
                         session,
