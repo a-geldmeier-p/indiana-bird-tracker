@@ -16,6 +16,7 @@ app_server <- function(input, output, session, db_path = bird_db_path(),
   choices <- stats::setNames(species$species_code, species$common_name)
 
   mod_dashboard_server("dashboard", con = con, refresh = refresh, reference_path = reference_path)
+  mod_map_server("map", con = con, refresh = refresh)
   mod_species_server("species", con = con, reference_path = reference_path)
   mod_record_server("record", con = con, species_choices = choices,
                     photo_library = photo_library, reference_path = reference_path, refresh = refresh)
