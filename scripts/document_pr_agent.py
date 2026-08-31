@@ -122,6 +122,25 @@ def normalize_structured_files(files: dict[object, object]) -> dict[str, str]:
     return normalized
 
 
+def extract_structured_payload(raw: str) -> dict:
+    """Extract the first complete JSON object containing a files mapping.
+
+    Model responses occasionally append prose or a second JSON value after a
+    valid object. ``json.loads`` rejects that entire response as extra data.
+    ``raw_decode`` lets us isolate one complete value while all subsequent
+    path and content validation remains unchanged.
+    """
+    decoder = json.JSONDecoder()
+    for marker in (match.start() for match in re.finditer(r"\{", raw)):
+        try:
+            payload, _ = decoder.raw_decode(raw[marker:])
+        except json.JSONDecodeError:
+            continue
+        if isinstance(payload, dict) and isinstance(payload.get("files"), dict):
+            return payload
+    raise ValueError("response does not contain a complete JSON object with a files mapping")
+
+
 def changed_source_paths(pr_diff: str, prefixes: list[str]) -> list[str]:
     """Return changed source paths selected by repository policy."""
     paths = re.findall(r"^diff --git a/([^ ]+) b/", pr_diff, re.MULTILINE)
@@ -364,12 +383,8 @@ Preserve every existing `VIDEO PLACEHOLDER:` comment in USER_GUIDE.md exactly un
 {required_note}
 PR diff:\n{diff}\nCurrent files:\n{context}"""
     raw = request_model_text(api_key, prompt)
-    start = raw.find("{")
-    end = raw.rfind("}")
-    if start < 0 or end <= start:
-        raise SystemExit("Documentation agent did not return structured file contents.")
     try:
-        payload = json.loads(raw[start : end + 1])
+        payload = extract_structured_payload(raw)
         files = payload.get("files", {})
         if not isinstance(files, dict):
             raise ValueError("files must be an object")
