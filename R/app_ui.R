@@ -1,4 +1,6 @@
 #' Application user interface
+#'
+#' Provides the top-level navigation, including the county map view.
 #' @param request Internal Shiny request object.
 #' @return Shiny UI.
 #' @keywords internal
@@ -24,4 +26,9 @@ app_ui <- function(request) {
   )
 }
 
+#' Locate packaged application files
+#'
+#' @param ... Components passed to [system.file()].
+#' @return The resolved path within the installed package.
+#' @keywords internal
 app_sys <- function(...) system.file(..., package = "indianabirdtracker")

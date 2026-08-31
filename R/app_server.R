@@ -1,7 +1,11 @@
 #' Application server
+#'
+#' The server initializes the local database and connects the dashboard, county
+#' map, catalog, recording, and sightings modules.
 #' @param input,output,session Standard Shiny server objects.
 #' @param db_path DuckDB file path.
 #' @param photo_library App-managed photo-library directory.
+#' @param reference_path User-managed reference-photo directory.
 #' @return Nothing; called for side effects.
 #' @keywords internal
 app_server <- function(input, output, session, db_path = bird_db_path(),

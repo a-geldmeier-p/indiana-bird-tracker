@@ -1,9 +1,24 @@
+#' Normalize an Indiana county name for matching
+#'
+#' Removes surrounding whitespace, a trailing `County` suffix, and
+#' punctuation differences.
+#' @param value County name or names.
+#' @return Lower-case alphanumeric county keys.
+#' @keywords internal
 normalize_county_key <- function(value) {
   value <- tolower(trimws(as.character(value)))
   value <- sub("[[:space:]]+county$", "", value)
   gsub("[^a-z0-9]+", "", value)
 }
 
+#' Build county map data with recorded species counts
+#'
+#' Loads Indiana county boundaries and joins each county to the number of
+#' distinct species recorded in the sightings table.
+#' @param con An initialized DBI connection.
+#' @return An `sf` data frame containing county geometry and
+#'   `distinct_species` counts.
+#' @keywords internal
 indiana_county_map_data <- function(con) {
   county_map <- maps::map("county", regions = "indiana", fill = TRUE, plot = FALSE)
   counties <- sf::st_as_sf(county_map)
@@ -32,6 +47,11 @@ indiana_county_map_data <- function(con) {
   counties
 }
 
+#' Create the county map module UI
+#'
+#' @param id Shiny module namespace identifier.
+#' @return A Shiny UI fragment containing the county map output.
+#' @keywords internal
 mod_map_ui <- function(id) {
   ns <- shiny::NS(id)
   shiny::fluidPage(
@@ -47,6 +67,15 @@ mod_map_ui <- function(id) {
   )
 }
 
+#' Run the county map module server
+#'
+#' Reactively renders the Indiana county map and refreshes its counts when the
+#' application refresh value changes.
+#' @param id Shiny module namespace identifier.
+#' @param con An initialized DBI connection.
+#' @param refresh Reactive refresh value.
+#' @return A Shiny module server result, invisibly.
+#' @keywords internal
 mod_map_server <- function(id, con, refresh) {
   shiny::moduleServer(id, function(input, output, session) {
     map_data <- shiny::reactive({
