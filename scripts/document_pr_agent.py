@@ -123,22 +123,35 @@ def normalize_structured_files(files: dict[object, object]) -> dict[str, str]:
 
 
 def extract_structured_payload(raw: str) -> dict:
-    """Extract the first complete JSON object containing a files mapping.
+    """Merge complete JSON objects containing file mappings.
 
-    Model responses occasionally append prose or a second JSON value after a
-    valid object. ``json.loads`` rejects that entire response as extra data.
-    ``raw_decode`` lets us isolate one complete value while all subsequent
-    path and content validation remains unchanged.
+    Large model responses may be emitted as multiple JSON values. ``json.loads``
+    rejects the response as extra data, while accepting only the first value can
+    discard required files from later values. Decode every complete top-level
+    object, merge complementary files, and reject conflicting duplicates.
     """
     decoder = json.JSONDecoder()
+    merged_files = {}
+    found_payload = False
     for marker in (match.start() for match in re.finditer(r"\{", raw)):
         try:
             payload, _ = decoder.raw_decode(raw[marker:])
         except json.JSONDecodeError:
             continue
         if isinstance(payload, dict) and isinstance(payload.get("files"), dict):
-            return payload
-    raise ValueError("response does not contain a complete JSON object with a files mapping")
+            found_payload = True
+            for raw_name, content in payload["files"].items():
+                name = str(raw_name).strip()
+                if name in merged_files and merged_files[name] != content:
+                    raise ValueError(
+                        f"response contains conflicting content for file: {name}"
+                    )
+                merged_files[name] = content
+    if not found_payload:
+        raise ValueError(
+            "response does not contain a complete JSON object with a files mapping"
+        )
+    return {"files": merged_files}
 
 
 def changed_source_paths(pr_diff: str, prefixes: list[str]) -> list[str]:
