@@ -29,11 +29,11 @@ By default, the app uses `bird_tracker.duckdb`, `photos/`, and `reference-photos
 The catalog shows a user-supplied reference photo when one is available. Add files to the `reference-photos/` folder using a lower-case common-name slug, such as `american-coot.jpg` or `woodhouses-scrub-jay.png`. Supported formats are `.jpg`, `.jpeg`, and `.png`. Missing files show a placeholder rather than a broken image.
 
 <figure id="tutorial-catalog">
-  <video controls preload="metadata" aria-label="Catalog browsing and filtering tutorial">
+  <video controls preload="metadata" poster="docs/playwright/artifacts/catalog.png" aria-label="Browse the Indiana catalog tutorial">
     <source src="docs/playwright/artifacts/catalog.webm" type="video/webm">
     Your browser does not support embedded WebM video.
   </video>
-  <figcaption>Catalog browsing and filtering tutorial.</figcaption>
+  <figcaption>Browse the Indiana catalog tutorial.</figcaption>
 </figure>
 
 ## Record a sighting
@@ -47,11 +47,11 @@ The catalog shows a user-supplied reference photo when one is available. Add fil
 7. Select **Save sighting** and confirm the success message.
 
 <figure id="tutorial-record_sighting">
-  <video controls preload="metadata" aria-label="Recording a sighting tutorial">
+  <video controls preload="metadata" poster="docs/playwright/artifacts/record_sighting.png" aria-label="Record a sighting tutorial">
     <source src="docs/playwright/artifacts/record_sighting.webm" type="video/webm">
     Your browser does not support embedded WebM video.
   </video>
-  <figcaption>Recording a sighting tutorial.</figcaption>
+  <figcaption>Record a sighting tutorial.</figcaption>
 </figure>
 
 ## Review and filter My Sightings
@@ -63,11 +63,11 @@ The catalog shows a user-supplied reference photo when one is available. Add fil
 5. Open the **Sighting photos** section to view linked local images in a three-column fixed-size grid. Photos preserve their aspect ratio inside each box; missing files are reported clearly.
 
 <figure id="tutorial-my_sightings">
-  <video controls preload="metadata" aria-label="Filtering and reviewing My Sightings tutorial">
+  <video controls preload="metadata" poster="docs/playwright/artifacts/my_sightings.png" aria-label="Review and filter My Sightings tutorial">
     <source src="docs/playwright/artifacts/my_sightings.webm" type="video/webm">
     Your browser does not support embedded WebM video.
   </video>
-  <figcaption>Filtering and reviewing My Sightings tutorial.</figcaption>
+  <figcaption>Review and filter My Sightings tutorial.</figcaption>
 </figure>
 
 ## View the dashboard
@@ -77,11 +77,11 @@ The catalog shows a user-supplied reference photo when one is available. Add fil
 3. Read the **Recent observations** table, including each species reference thumbnail and observation details.
 
 <figure id="tutorial-dashboard">
-  <video controls preload="metadata" aria-label="Dashboard overview tutorial">
+  <video controls preload="metadata" poster="docs/playwright/artifacts/dashboard.png" aria-label="View the dashboard tutorial">
     <source src="docs/playwright/artifacts/dashboard.webm" type="video/webm">
     Your browser does not support embedded WebM video.
   </video>
-  <figcaption>Dashboard overview tutorial.</figcaption>
+  <figcaption>View the dashboard tutorial.</figcaption>
 </figure>
 
 ## Add or replace reference photos
