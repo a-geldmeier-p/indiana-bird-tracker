@@ -87,6 +87,31 @@ def contents_to_patch(files: dict[str, str]) -> str:
     return "\n".join(chunks)
 
 
+def allowed_agent_path(name: str) -> bool:
+    """Reject structured fallback output outside the documented edit boundary."""
+    path = Path(name)
+    if path.is_absolute() or ".." in path.parts:
+        return False
+    exact = {
+        "README.md",
+        "NEWS.md",
+        "USER_GUIDE.md",
+        "WORKFLOW_INVENTORY.md",
+        ".github/agents/workflow-contract.yml",
+    }
+    return name in exact or name.startswith(("R/", "man/", "tests/testthat/"))
+
+
+def validate_patch_paths(patch: str) -> None:
+    """Fail before application when a model patch targets a forbidden path."""
+    paths = re.findall(r"^diff --git a/([^ ]+) b/([^ ]+)$", patch, re.MULTILINE)
+    unexpected = sorted(
+        {path for pair in paths for path in pair if not allowed_agent_path(path)}
+    )
+    if unexpected:
+        raise SystemExit(f"Documentation agent patch targets forbidden paths: {unexpected}")
+
+
 def preserves_video_placeholders(patch: str) -> bool:
     """Keep pending placeholders and existing verified video embeds.
 
@@ -145,9 +170,11 @@ def request_file_contents(api_key: str, repository: str, pr_number: str, context
     prompt = f"""You are documenting {repository}, PR #{pr_number}.
 Return ONLY a JSON object with this exact shape: {{\"files\": {{\"README.md\": \"full text\", \"NEWS.md\": \"full text\", \"USER_GUIDE.md\": \"full text\", \"WORKFLOW_INVENTORY.md\": \"full text\"}}}}.
 Include only files that need truthful updates. The values must be complete replacement file contents, not diffs.
+The `files` object may also contain `.github/agents/workflow-contract.yml` when a user-visible workflow changes.
 Also include complete updated Roxygen source files or tests only when required by the PR, using their repository paths as keys.
 Do not invent features, links, videos, screenshots, or test results.
-Preserve all four existing `VIDEO PLACEHOLDER:` comments in USER_GUIDE.md exactly unless
+When a user workflow changes, include the complete updated `.github/agents/workflow-contract.yml`.
+Preserve every existing `VIDEO PLACEHOLDER:` comment in USER_GUIDE.md exactly unless
 `docs/playwright/artifacts/result.json` already contains verified real artifact paths.
 PR diff:\n{diff}\nCurrent files:\n{context}"""
     raw = request_patch(api_key, prompt)
@@ -161,6 +188,9 @@ PR diff:\n{diff}\nCurrent files:\n{context}"""
         if not isinstance(files, dict):
             raise ValueError("files must be an object")
         normalized = {str(k): str(v) for k, v in files.items()}
+        unexpected = sorted(name for name in normalized if not allowed_agent_path(name))
+        if unexpected:
+            raise ValueError(f"files outside documentation allow-list: {unexpected}")
         if "USER_GUIDE.md" in normalized:
             normalized["USER_GUIDE.md"] = restore_protected_guide_blocks(
                 normalized["USER_GUIDE.md"]
@@ -244,6 +274,7 @@ def main() -> None:
         Path("NEWS.md"),
         Path("USER_GUIDE.md"),
         Path("WORKFLOW_INVENTORY.md"),
+        Path(".github/agents/workflow-contract.yml"),
         Path("docs/agent-prompts/document-pr.md"),
     ]
     context = "\n\n".join(
@@ -265,11 +296,15 @@ Rules:
   1. README.md — update setup, usage, or behavior notes affected by this PR.
   2. NEWS.md — add one concise entry under the current development heading.
   3. USER_GUIDE.md — update the relevant user-facing workflow instructions.
-  4. WORKFLOW_INVENTORY.md — update workflow IDs/steps only when this PR changes them.
-- 5. Roxygen comments in R source files and the generated man/ files.
-  6. Focused tests under tests/testthat/ that cover behavior changed by this PR.
-- Do not edit application behavior, dependencies, CI workflows, policy files,
-  or Playwright files. Do not add unrelated tests or documentation.
+  4. WORKFLOW_INVENTORY.md — update user-visible workflow IDs and steps when this PR changes them.
+  5. .github/agents/workflow-contract.yml — add or update the matching machine-readable
+     workflow definition when user-visible steps, stable IDs, or workflows change. Each
+     workflow requires guide_heading, stable_ids, and a complete deterministic Playwright
+     `script`. Do not alter unchanged workflows.
+  6. Roxygen comments in R source files and the generated man/ files.
+  7. Focused tests under tests/testthat/ that cover behavior changed by this PR.
+- Do not edit application behavior, dependencies, CI workflows, policy files other than
+  workflow-contract.yml, or recorder/publisher scripts. Do not add unrelated tests or documentation.
 - Make only changes supported by the PR diff. Do not invent features, links, videos,
   screenshots, or test results. Preserve existing Markdown structure and headings.
 - Treat deleted Roxygen fields, focused tests, README capabilities, NEWS entries,
@@ -292,6 +327,7 @@ Rules:
 """
     patch = request_patch(api_key, prompt)
     if patch:
+        validate_patch_paths(patch)
         check = subprocess.run(["git", "apply", "--check"], input=patch, text=True, capture_output=True)
         if check.returncode:
             repair_prompt = f"""Repair this proposed unified git patch so `git apply --check` accepts it.
@@ -304,11 +340,13 @@ Patch:
 {patch}
 """
             patch = request_patch(api_key, repair_prompt)
+            validate_patch_paths(patch)
             repaired = subprocess.run(["git", "apply", "--check"], input=patch, text=True, capture_output=True)
             if repaired.returncode:
                 patch = request_file_contents(
                     api_key, args.repository, args.pr_number, context, read_text(args.diff)
                 )
+                validate_patch_paths(patch)
                 rebuilt = subprocess.run(
                     ["git", "apply", "--check"], input=patch, text=True, capture_output=True
                 )
@@ -321,6 +359,7 @@ Patch:
             patch = request_file_contents(
                 api_key, args.repository, args.pr_number, context, read_text(args.diff)
             )
+            validate_patch_paths(patch)
             rebuilt = subprocess.run(
                 ["git", "apply", "--check"], input=patch, text=True, capture_output=True
             )
@@ -330,14 +369,18 @@ Patch:
                     f"fallback patch:\n{rebuilt.stderr}"
                 )
     patch = restore_deleted_roxygen_params(patch, read_text(args.diff))
-    final_check = subprocess.run(
-        ["git", "apply", "--check"], input=patch, text=True, capture_output=True
-    )
-    if final_check.returncode:
-        raise SystemExit(
-            "Documentation patch plus deterministic Roxygen restoration is invalid:\n"
-            f"{final_check.stderr}"
+    # `git apply --check` treats an empty stream as an error. An empty patch is
+    # nevertheless a valid agent result when the PR requires no truthful
+    # documentation changes and there is no deterministic Roxygen restoration.
+    if patch:
+        final_check = subprocess.run(
+            ["git", "apply", "--check"], input=patch, text=True, capture_output=True
         )
+        if final_check.returncode:
+            raise SystemExit(
+                "Documentation patch plus deterministic Roxygen restoration is invalid:\n"
+                f"{final_check.stderr}"
+            )
     args.output.write_text(patch + ("\n" if patch else ""), encoding="utf-8")
 
 

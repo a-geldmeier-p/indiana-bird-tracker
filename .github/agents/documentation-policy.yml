@@ -6,8 +6,7 @@ allowed_paths:
   - NEWS.md
   - USER_GUIDE.md
   - WORKFLOW_INVENTORY.md
-  - docs/playwright/manifest.yml
-  - docs/playwright/artifacts/**
+  - .github/agents/workflow-contract.yml
 forbidden_paths:
   - DESCRIPTION
   - NAMESPACE

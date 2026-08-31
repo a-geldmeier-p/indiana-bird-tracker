@@ -1,29 +1,41 @@
 {
-  "commit_sha": "09304dfc8ff6de85487577bd66f4df1ea338b646",
+  "commit_sha": "1d35f8d48da516ca2703e0bf85574c5c9cae0771",
   "workflows": [
     {
       "workflow": "catalog",
-      "commit_sha": "09304dfc8ff6de85487577bd66f4df1ea338b646",
+      "id": "catalog",
       "video": "docs/playwright/artifacts/catalog.webm",
-      "poster": "docs/playwright/artifacts/catalog.png"
+      "poster": "docs/playwright/artifacts/catalog.png",
+      "commit_sha": "1d35f8d48da516ca2703e0bf85574c5c9cae0771",
+      "guide_heading": "Browse the Indiana catalog",
+      "workflow_fingerprint": "4212738d9d490391e108be3214ada1536fa0dbc35196f00fb7262db614530f2f"
     },
     {
       "workflow": "record_sighting",
-      "commit_sha": "09304dfc8ff6de85487577bd66f4df1ea338b646",
+      "id": "record_sighting",
       "video": "docs/playwright/artifacts/record_sighting.webm",
-      "poster": "docs/playwright/artifacts/record_sighting.png"
+      "poster": "docs/playwright/artifacts/record_sighting.png",
+      "commit_sha": "1d35f8d48da516ca2703e0bf85574c5c9cae0771",
+      "guide_heading": "Record a sighting",
+      "workflow_fingerprint": "56cf1e639c34126350c85c0adb5f6a3f5e8cbb7fdcbc352e177bebb9906423fe"
     },
     {
       "workflow": "my_sightings",
-      "commit_sha": "09304dfc8ff6de85487577bd66f4df1ea338b646",
+      "id": "my_sightings",
       "video": "docs/playwright/artifacts/my_sightings.webm",
-      "poster": "docs/playwright/artifacts/my_sightings.png"
+      "poster": "docs/playwright/artifacts/my_sightings.png",
+      "commit_sha": "1d35f8d48da516ca2703e0bf85574c5c9cae0771",
+      "guide_heading": "Review and filter My Sightings",
+      "workflow_fingerprint": "0e7379e36ef23be0c040d0a9921da0b0ee9afcbcc425fb98341706934eaffa72"
     },
     {
       "workflow": "dashboard",
-      "commit_sha": "09304dfc8ff6de85487577bd66f4df1ea338b646",
+      "id": "dashboard",
       "video": "docs/playwright/artifacts/dashboard.webm",
-      "poster": "docs/playwright/artifacts/dashboard.png"
+      "poster": "docs/playwright/artifacts/dashboard.png",
+      "commit_sha": "1d35f8d48da516ca2703e0bf85574c5c9cae0771",
+      "guide_heading": "View the dashboard",
+      "workflow_fingerprint": "f2231d50fc41a8db981cd016b0fbc3283b7743836cdd9cae31de8b09bd11c6b6"
     }
   ]
 }
