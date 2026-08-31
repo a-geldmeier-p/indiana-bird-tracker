@@ -82,20 +82,25 @@ def normalize_patch(patch: str) -> str:
 def contents_to_patch(files: dict[str, str]) -> str:
     chunks = []
     for name, new_text in files.items():
+        new_text = new_text.replace("\r\n", "\n").replace("\r", "\n")
+        if new_text and not new_text.endswith("\n"):
+            new_text += "\n"
         path = Path(name)
-        old_text = path.read_text(encoding="utf-8") if path.exists() else ""
+        existed = path.exists()
+        old_text = path.read_text(encoding="utf-8") if existed else ""
         if old_text == new_text:
             continue
         diff = difflib.unified_diff(
             old_text.splitlines(True),
             new_text.splitlines(True),
-            fromfile=f"a/{name}" if path.exists() else "/dev/null",
+            fromfile=f"a/{name}" if existed else "/dev/null",
             tofile=f"b/{name}",
             lineterm="\n",
         )
         body = "".join(diff)
         if body:
-            chunks.append(f"diff --git a/{name} b/{name}\n{body}")
+            metadata = "" if existed else "new file mode 100644\n"
+            chunks.append(f"diff --git a/{name} b/{name}\n{metadata}{body}")
     return "\n".join(chunks)
 
 
@@ -630,6 +635,11 @@ Rules:
         validate_patch_paths(patch, allowed_patterns)
         check = subprocess.run(["git", "apply", "--check"], input=patch, text=True, capture_output=True)
         if check.returncode:
+            if application_change:
+                raise SystemExit(
+                    "Deterministic structured patch construction failed before application:\n"
+                    f"{check.stderr}"
+                )
             repair_prompt = f"""Repair this proposed unified git patch so `git apply --check` accepts it.
 Return ONLY a standard git unified patch beginning with `diff --git`.
 Do not use `*** Begin Patch`, `*** End Patch`, Markdown fences, or prose.
