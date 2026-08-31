@@ -19,11 +19,14 @@ app_server(
 \item{db_path}{DuckDB file path.}
 
 \item{photo_library}{App-managed photo-library directory.}
+
+\item{reference_path}{User-managed reference-photo directory.}
 }
 \value{
 Nothing; called for side effects.
 }
 \description{
-Application server
+The server initializes the local database and connects the dashboard, county
+map, catalog, recording, and sightings modules.
 }
 \keyword{internal}

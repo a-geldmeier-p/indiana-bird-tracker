@@ -21,6 +21,7 @@ body { background: var(--cream); color: var(--ink); font-family: "Segoe UI", san
 .catalog-filter-row .form-group { margin-bottom: 0; }.catalog-filter-row .btn { min-height: 34px; margin-bottom: 15px; white-space: nowrap; }
 .filter-help, .catalog-result-count { color: #5f6f67; font-size: 13px; margin: 10px 0 0; }.catalog-no-match { color: #8a4b27; background: #fff4e8; border: 1px solid #efc69f; border-radius: 8px; padding: 12px; }
 .metric-card { background: var(--moss); border-left: 6px solid var(--gold); border-radius: 12px; padding: 20px; }.metric-card span { display:block; font-size: 15px; }.metric-card strong { display:block; font-size: 38px; line-height: 1.2; }
+.map-panel { padding-bottom: 16px; }.map-panel h3 { margin-top: 0; }.map-help { color:#5f6f67; margin-bottom:16px; }.map-panel .leaflet { background:#e7ede8; border:1px solid #c8d3ca; border-radius:10px; }.map-panel .legend { color:var(--ink); box-shadow:0 2px 8px rgba(25,53,44,.18); border-radius:7px; }
 .btn-primary { background: var(--fern); border-color: var(--fern); }.source-note, footer { color:#5f6f67; font-size: 13px; } footer { padding: 24px; text-align:center; }
 table { background:#fff; } th { color: var(--ink); }
 .reference-bird-thumbnail { width: 96px; height: 96px; max-width: 100%; max-height: 100%; object-fit: fill; border-radius: 8px; background: var(--moss); display: block; }

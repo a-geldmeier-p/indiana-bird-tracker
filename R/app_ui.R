@@ -1,4 +1,6 @@
 #' Application user interface
+#'
+#' Provides the top-level navigation, including the county map view.
 #' @param request Internal Shiny request object.
 #' @return Shiny UI.
 #' @keywords internal
@@ -15,6 +17,7 @@ app_ui <- function(request) {
         shiny::tags$h2("Your Indiana birding, in one quiet place"),
         shiny::tags$p("Browse a starter catalog, record observations, and watch your personal list grow.")),
       shiny::tabPanel("Dashboard", value = "dashboard", mod_dashboard_ui("dashboard")),
+      shiny::tabPanel("Map View", value = "map", mod_map_ui("map")),
       shiny::tabPanel("Species catalog", value = "species", mod_species_ui("species")),
       shiny::tabPanel("Record sighting", value = "record", mod_record_ui("record")),
       shiny::tabPanel("My sightings", value = "sightings", mod_sightings_ui("sightings")),
@@ -23,4 +26,9 @@ app_ui <- function(request) {
   )
 }
 
+#' Locate packaged application files
+#'
+#' @param ... Components passed to [system.file()].
+#' @return The resolved path within the installed package.
+#' @keywords internal
 app_sys <- function(...) system.file(..., package = "indianabirdtracker")
