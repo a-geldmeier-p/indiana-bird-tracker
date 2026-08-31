@@ -369,14 +369,18 @@ Patch:
                     f"fallback patch:\n{rebuilt.stderr}"
                 )
     patch = restore_deleted_roxygen_params(patch, read_text(args.diff))
-    final_check = subprocess.run(
-        ["git", "apply", "--check"], input=patch, text=True, capture_output=True
-    )
-    if final_check.returncode:
-        raise SystemExit(
-            "Documentation patch plus deterministic Roxygen restoration is invalid:\n"
-            f"{final_check.stderr}"
+    # `git apply --check` treats an empty stream as an error. An empty patch is
+    # nevertheless a valid agent result when the PR requires no truthful
+    # documentation changes and there is no deterministic Roxygen restoration.
+    if patch:
+        final_check = subprocess.run(
+            ["git", "apply", "--check"], input=patch, text=True, capture_output=True
         )
+        if final_check.returncode:
+            raise SystemExit(
+                "Documentation patch plus deterministic Roxygen restoration is invalid:\n"
+                f"{final_check.stderr}"
+            )
     args.output.write_text(patch + ("\n" if patch else ""), encoding="utf-8")
 
 
