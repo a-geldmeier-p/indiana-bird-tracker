@@ -87,6 +87,19 @@ def contents_to_patch(files: dict[str, str]) -> str:
     return "\n".join(chunks)
 
 
+def normalize_structured_files(files: dict[object, object]) -> dict[str, str]:
+    """Trim accidental key whitespace without weakening the path allow-list."""
+    normalized = {}
+    for raw_name, raw_text in files.items():
+        name = str(raw_name).strip()
+        if not name:
+            raise ValueError("file paths must not be empty")
+        if name in normalized:
+            raise ValueError(f"duplicate file path after normalization: {name}")
+        normalized[name] = str(raw_text)
+    return normalized
+
+
 def allowed_agent_path(name: str) -> bool:
     """Reject structured fallback output outside the documented edit boundary."""
     path = Path(name)
@@ -170,6 +183,7 @@ def request_file_contents(api_key: str, repository: str, pr_number: str, context
     prompt = f"""You are documenting {repository}, PR #{pr_number}.
 Return ONLY a JSON object with this exact shape: {{\"files\": {{\"README.md\": \"full text\", \"NEWS.md\": \"full text\", \"USER_GUIDE.md\": \"full text\", \"WORKFLOW_INVENTORY.md\": \"full text\"}}}}.
 Include only files that need truthful updates. The values must be complete replacement file contents, not diffs.
+File-path keys must match repository-relative paths exactly, with no leading or trailing whitespace.
 The `files` object may also contain `.github/agents/workflow-contract.yml` when a user-visible workflow changes.
 Also include complete updated Roxygen source files or tests only when required by the PR, using their repository paths as keys.
 Do not invent features, links, videos, screenshots, or test results.
@@ -187,7 +201,7 @@ PR diff:\n{diff}\nCurrent files:\n{context}"""
         files = payload.get("files", {})
         if not isinstance(files, dict):
             raise ValueError("files must be an object")
-        normalized = {str(k): str(v) for k, v in files.items()}
+        normalized = normalize_structured_files(files)
         unexpected = sorted(name for name in normalized if not allowed_agent_path(name))
         if unexpected:
             raise ValueError(f"files outside documentation allow-list: {unexpected}")
