@@ -11,6 +11,29 @@ forbidden_paths:
   - DESCRIPTION
   - NAMESPACE
   - .github/workflows/**
+application_detection:
+  changed_path_prefixes: [R/, inst/app/]
+  roxygen_source_prefixes: [R/]
+agent_context_globs:
+  - R/**/*.R
+  - inst/app/**/*
+  - man/**/*.Rd
+  - tests/testthat/**/*.R
+function_coverage:
+  manual_globs: [man/**/*.Rd]
+  test_globs: [tests/testthat/**/*.R]
+required_application_outputs:
+  exact_paths:
+    - README.md
+    - NEWS.md
+    - USER_GUIDE.md
+    - WORKFLOW_INVENTORY.md
+    - .github/agents/workflow-contract.yml
+  path_prefixes:
+    - tests/testthat/
+workflow_discovery:
+  ui_files: [R/app_ui.R]
+  tab_panel_regex: 'shiny::tabPanel\(\s*"([^"]+)"'
 pre_agent_checks:
   - testthat::test_local()
   - Shiny smoke check

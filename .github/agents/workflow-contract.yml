@@ -81,3 +81,16 @@ workflows:
         await page.getByRole('cell', { name: /Eagle Creek Park|Fort Harrison State Park|White River State Park|Monon Trail/ }).first().waitFor();
         await page.mouse.wheel(0, 700); await pause();
       }
+  map_view:
+    guide_heading: Explore the county map
+    stable_ids: [main-navigation, map-county_map]
+    script: |
+      async (page) => {
+        const pause = () => page.waitForTimeout(700);
+        await page.goto('http://127.0.0.1:3838/');
+        await page.getByRole('link', { name: 'Map View' }).click();
+        await page.getByRole('heading', { name: 'Indiana county birding map' }).waitFor();
+        await page.locator('#map-county_map').waitFor();
+        await page.getByText('Distinct species seen').waitFor();
+        await pause();
+      }

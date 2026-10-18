@@ -43,11 +43,20 @@ This inventory is the human-readable contract for the Playwright tutorial record
 - Confirm recent observations include their species reference thumbnails.
 - Add a sighting, return to the dashboard, and confirm metrics refresh without restarting the app.
 
+## 5. Explore the county map
+
+- Open **Map View** (`main-navigation`, value `map`).
+- Confirm the **Indiana county birding map** heading and explanatory text are visible.
+- Confirm the county map output (`map-county_map`) renders the Indiana county boundaries.
+- Hover over a county and confirm its label reports the county name and distinct-species count.
+- Confirm the legend is titled **Distinct species seen**.
+- Add a sighting with an Indiana county, return to **Map View**, and confirm the map refreshes from the updated sightings data.
+
 ## Tutorial recording fixture
 
 The pull-request workflow uses `scripts/seed_playwright_demo.R` with a temporary DuckDB path and temporary photo and reference-photo folders. The script seeds four synthetic sightings and synthetic SVG photo fixtures, then starts Shiny on the local workflow port. Tutorial definitions live in `.github/agents/workflow-contract.yml`. After the documentation agent updates that contract, a deterministic selector fingerprints every definition and compares it with `docs/playwright/manifest.yml`. Only new or changed workflows, or workflows whose video or poster is missing, are sent to the isolated official Playwright MCP server. The number of workflows is not fixed. Every selected workflow must produce a non-empty WebM video and PNG poster before publication; unchanged workflows retain their existing media. Verified replacements are copied into `docs/playwright/artifacts/`, recorded in the manifest and `docs/playwright/artifacts/result.json`, and embedded in the corresponding user-guide sections. Videos and diagnostics are also uploaded as a temporary 30-day workflow artifact.
 
-## 5. Repository pull-request workflows
+## 6. Repository pull-request workflows
 
 - `.github/workflows/self-documenting-pr.yml` runs automatically for pull requests that are opened, synchronized, or reopened, and can also be started with `workflow_dispatch`.
 - The workflow validates the pull request head repository, checks out the head revision, and runs an application preflight that installs the package, runs local `testthat` tests, and performs the Shiny smoke check.

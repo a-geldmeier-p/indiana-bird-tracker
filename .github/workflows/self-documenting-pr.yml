@@ -91,10 +91,9 @@ jobs:
 
       - name: Validate agent changes
         run: |
-          git diff --binary -- R man NAMESPACE > "$RUNNER_TEMP/before-roxygen.diff"
           Rscript -e 'roxygen2::roxygenise()'
-          git diff --binary -- R man NAMESPACE > "$RUNNER_TEMP/after-roxygen.diff"
-          diff -u "$RUNNER_TEMP/before-roxygen.diff" "$RUNNER_TEMP/after-roxygen.diff"
+          git diff --check
+          git diff --exit-code -- NAMESPACE
           Rscript -e 'rcmdcheck::rcmdcheck(args = "--no-manual", error_on = "error")'
           Rscript scripts/update_workflow_inventory.R
           Rscript scripts/check_docs.R
