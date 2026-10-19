@@ -5,8 +5,12 @@ on:
     branches: [main]
     paths:
       - USER_GUIDE.md
+      - NEWS.md
+      - DESCRIPTION
+      - man/**
       - docs/**
       - scripts/build_pages.sh
+      - scripts/build_reference.R
       - .github/workflows/pages.yml
   workflow_dispatch:
 
@@ -24,13 +28,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Build the Pages source from USER_GUIDE.md
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.4.3'
+      - name: Build the Pages source
         run: bash scripts/build_pages.sh
       - uses: actions/configure-pages@v6.0.0
       - uses: actions/jekyll-build-pages@v1
         with:
           source: ./_site_source
           destination: ./_site
+      - name: Verify guide, function documentation, and news pages
+        run: |
+          test -s _site/index.html
+          test -s _site/reference/index.html
+          test -s _site/reference/run_app.html
+          test -s _site/news/index.html
       - uses: actions/upload-pages-artifact@v4
         with:
           path: ./_site
