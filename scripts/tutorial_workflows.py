@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import fnmatch
 from pathlib import Path
 
 import yaml
@@ -22,7 +23,14 @@ def load_contract(path: Path) -> dict[str, dict]:
         for field in ("guide_heading", "stable_ids", "script"):
             if not workflow.get(field):
                 raise ValueError(f"Workflow {workflow_id} is missing {field}.")
+        if not isinstance(workflow.get("source_paths"), list) or not workflow["source_paths"]:
+            raise ValueError(f"Workflow {workflow_id} needs source_paths for stale-video detection.")
     return workflows
+
+
+def source_matches(changed_path: str, patterns: list[str]) -> bool:
+    """Match repository-relative paths against contract-owned source globs."""
+    return any(fnmatch.fnmatchcase(changed_path, pattern) for pattern in patterns)
 
 
 def fingerprint(workflow_id: str, workflow: dict) -> str:

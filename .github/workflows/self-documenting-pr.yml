@@ -15,6 +15,9 @@ permissions:
   pull-requests: read
   checks: read
 
+env:
+  TUTORIAL_BASE_URL: http://127.0.0.1:3838
+
 jobs:
   validate-pr:
     runs-on: ubuntu-latest
@@ -69,9 +72,11 @@ jobs:
           python-version: '3.12'
       - name: Install MCP and workflow tooling
         run: python -m pip install --disable-pip-version-check -r requirements-mcp.txt
+      - name: Check tutorial selection offline
+        run: python -m unittest discover -s scripts -p 'test_*.py'
 
-      # The documentation agent runs first so its workflow-contract diff controls
-      # which tutorials are new, changed, unchanged, or missing artifacts.
+      # The agent runs first; contract fingerprints, PR source paths, and artifact
+      # presence then determine which tutorials need recording.
       - name: Request allowed documentation edits
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -79,6 +84,7 @@ jobs:
         run: |
           pr="${{ github.event.pull_request.number || inputs.pr_number }}"
           gh pr diff "$pr" > "$RUNNER_TEMP/pr.diff"
+          gh pr diff "$pr" --name-only > "$RUNNER_TEMP/pr-changed-paths.txt"
           python scripts/document_pr_agent.py --repository "$GITHUB_REPOSITORY" --pr-number "$pr" --policy .github/agents/documentation-policy.yml --diff "$RUNNER_TEMP/pr.diff" --output "$RUNNER_TEMP/documentation.patch"
           test ! -s "$RUNNER_TEMP/documentation.patch" || git apply --whitespace=fix "$RUNNER_TEMP/documentation.patch"
           python scripts/sync_workflow_placeholders.py
@@ -104,7 +110,7 @@ jobs:
         shell: bash
         run: |
           python scripts/check_tutorial_workflows.py
-          python scripts/select_tutorial_workflows.py --output "$RUNNER_TEMP/tutorial-selection.json"
+          python scripts/select_tutorial_workflows.py --changed-paths "$RUNNER_TEMP/pr-changed-paths.txt" --output "$RUNNER_TEMP/tutorial-selection.json"
           count=$(python -c 'import json,os; print(len(json.load(open(os.environ["RUNNER_TEMP"] + "/tutorial-selection.json"))["workflows"]))')
           echo "count=$count" >> "$GITHUB_OUTPUT"
           echo "Selected $count tutorial workflow(s)."
@@ -128,7 +134,7 @@ jobs:
         shell: bash
         run: |
           for attempt in {1..60}; do
-            if curl --fail --silent http://127.0.0.1:3838 > /dev/null; then exit 0; fi
+            if curl --fail --silent "$TUTORIAL_BASE_URL" > /dev/null; then exit 0; fi
             if ! kill -0 "$(cat "$RUNNER_TEMP/shiny-playwright.pid")" 2>/dev/null; then
               cat "$RUNNER_TEMP/shiny-playwright.log"; exit 1
             fi
@@ -154,7 +160,7 @@ jobs:
               --headless --browser chromium --caps devtools --no-sandbox --isolated \
               --host 0.0.0.0 --port 8931 --output-dir /output \
               --allowed-hosts 127.0.0.1:8931 \
-              --allowed-origins http://127.0.0.1:3838
+              --allowed-origins "$TUTORIAL_BASE_URL"
           for attempt in {1..30}; do
             docker inspect --format '{{.State.Running}}' bird-tracker-playwright-mcp 2>/dev/null | grep -qx true && exit 0
             sleep 1
@@ -168,7 +174,7 @@ jobs:
         run: |
           python scripts/record_tutorials_mcp.py \
             --mcp-url http://127.0.0.1:8931/mcp \
-            --base-url http://127.0.0.1:3838 \
+            --base-url "$TUTORIAL_BASE_URL" \
             --selection "$RUNNER_TEMP/tutorial-selection.json" \
             --output-dir "$RUNNER_TEMP/mcp-output"
 

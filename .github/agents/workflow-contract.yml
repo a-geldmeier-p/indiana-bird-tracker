@@ -1,11 +1,13 @@
+shared_source_paths: [R/app_ui.R, R/app_server.R, R/db.R, inst/app/**]
 workflows:
   catalog:
     guide_heading: Browse the Indiana catalog
+    source_paths: [R/mod_species.R, R/species_seed.R, R/reference_birds.R, R/reference_photo_library.R]
     stable_ids: [main-navigation, species-search, species-bird_group, species-status_note, species-filter_catalog, species-reset_filters, species-species_table, species-catalog_status]
     script: |
       async (page) => {
         const pause = () => page.waitForTimeout(700);
-        await page.goto('http://127.0.0.1:3838/');
+        await page.goto('__TUTORIAL_BASE_URL__/');
         await page.getByRole('link', { name: 'Species catalog' }).click();
         await page.getByLabel('Search common or scientific name').fill('cardinal');
         await page.getByRole('button', { name: 'Filter catalog' }).click();
@@ -25,18 +27,19 @@ workflows:
       }
   record_sighting:
     guide_heading: Record a sighting
+    source_paths: [R/mod_record.R, R/photo_library.R]
     stable_ids: [main-navigation, record-species_code, record-observation_date, record-observation_time, record-location, record-county, record-photo_upload, record-photo_reference, record-save_sighting, record-save-status]
     script: |
       async (page) => {
         const pause = () => page.waitForTimeout(700);
-        await page.goto('http://127.0.0.1:3838/');
+        await page.goto('__TUTORIAL_BASE_URL__/');
         await page.getByRole('link', { name: 'Record sighting' }).click();
         const species = page.locator('#record-species_code-selectized');
         await species.click();
         await page.locator('.selectize-dropdown .option').first().waitFor();
         await page.locator('.selectize-dropdown .option').first().click();
         await page.getByLabel('Observation time').fill('12:00');
-        await page.locator('#record-observation_date input').fill('2026-08-20');
+        await page.locator('#record-observation_date input').fill(new Date().toISOString().slice(0, 10));
         await page.getByLabel('Location').fill('Eagle Creek Park');
         await page.getByLabel('Indiana county').fill('Marion');
         await page.getByLabel('Notes (optional)').fill('Playwright MCP tutorial sighting');
@@ -48,17 +51,20 @@ workflows:
       }
   my_sightings:
     guide_heading: Review and filter My Sightings
+    source_paths: [R/mod_sightings.R, R/photo_library.R]
     stable_ids: [main-navigation, sightings-species_code, sightings-county, sightings-use_date_filter, sightings-date_range, sightings-sightings_table, sightings-sighting_photos]
     script: |
       async (page) => {
         const pause = () => page.waitForTimeout(700);
-        await page.goto('http://127.0.0.1:3838/');
+        await page.goto('__TUTORIAL_BASE_URL__/');
         await page.getByRole('link', { name: 'My sightings' }).click();
         await page.getByRole('heading', { name: 'Filter my sightings' }).waitFor();
         await page.getByLabel('Filter by observation date').check();
         const dateRange = page.locator('#sightings-date_range input');
-        await dateRange.first().fill('2026-08-01');
-        await dateRange.last().fill('2026-08-26');
+        const today = new Date();
+        const thirtyDaysAgo = new Date(today.getTime() - 30 * 86400000);
+        await dateRange.first().fill(thirtyDaysAgo.toISOString().slice(0, 10));
+        await dateRange.last().fill(today.toISOString().slice(0, 10));
         await page.getByRole('button', { name: 'Filter sightings' }).click();
         await page.getByRole('cell', { name: /Playwright demo:/ }).first().waitFor();
         await pause(); await page.mouse.wheel(0, 1200);
@@ -69,28 +75,16 @@ workflows:
       }
   dashboard:
     guide_heading: View the dashboard
+    source_paths: [R/mod_dashboard.R]
     stable_ids: [main-navigation, dashboard-total-sightings, dashboard-distinct-species, dashboard-recent_sightings]
     script: |
       async (page) => {
         const pause = () => page.waitForTimeout(700);
-        await page.goto('http://127.0.0.1:3838/');
+        await page.goto('__TUTORIAL_BASE_URL__/');
         await page.getByRole('link', { name: 'Dashboard' }).click();
         await page.getByText('Total sightings').waitFor();
         await page.getByText('Distinct species').waitFor();
         await page.locator('#dashboard-total_sightings').filter({ hasNotText: '0' }).waitFor();
         await page.getByRole('cell', { name: /Eagle Creek Park|Fort Harrison State Park|White River State Park|Monon Trail/ }).first().waitFor();
         await page.mouse.wheel(0, 700); await pause();
-      }
-  map_view:
-    guide_heading: Explore the county map
-    stable_ids: [main-navigation, map-county_map]
-    script: |
-      async (page) => {
-        const pause = () => page.waitForTimeout(700);
-        await page.goto('http://127.0.0.1:3838/');
-        await page.getByRole('link', { name: 'Map View' }).click();
-        await page.getByRole('heading', { name: 'Indiana county birding map' }).waitFor();
-        await page.locator('#map-county_map').waitFor();
-        await page.getByText('Distinct species seen').waitFor();
-        await pause();
       }

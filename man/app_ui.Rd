@@ -13,6 +13,6 @@ app_ui(request)
 Shiny UI.
 }
 \description{
-Provides the top-level navigation, including the county map view.
+Provides the top-level navigation for the dashboard, catalog, and sightings.
 }
 \keyword{internal}

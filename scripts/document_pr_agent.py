@@ -104,16 +104,6 @@ def contents_to_patch(files: dict[str, str]) -> str:
     return "\n".join(chunks)
 
 
-def changed_paths_in_patch(patch: str) -> set[str]:
-    """Return repository paths changed by a generated unified patch."""
-    return {
-        right
-        for _, right in re.findall(
-            r"^diff --git a/([^ ]+) b/([^ ]+)$", patch, re.MULTILINE
-        )
-    }
-
-
 def normalize_structured_files(files: dict[object, object]) -> dict[str, str]:
     """Trim accidental key whitespace without weakening the path allow-list."""
     normalized = {}
@@ -180,16 +170,6 @@ def functions_by_source(paths: list[str]) -> dict[str, list[str]]:
     return functions
 
 
-def has_roxygen_block(source: str, function_name: str) -> bool:
-    """Check that a function definition is immediately preceded by Roxygen."""
-    return bool(
-        re.search(
-            rf"(?m)(?:^#'[^\n]*\n)+^{re.escape(function_name)}\s*<-\s*function\s*\(",
-            source,
-        )
-    )
-
-
 def files_for_globs(patterns: list[str]) -> list[Path]:
     """Resolve policy globs to a stable, de-duplicated file list."""
     paths = []
@@ -230,35 +210,6 @@ def application_behavior_changed(pr_diff: str, prefixes: list[str]) -> bool:
     """Identify PRs whose committed diff changes application behavior or UI."""
     paths = re.findall(r"^diff --git a/([^ ]+) b/", pr_diff, re.MULTILINE)
     return any(path.startswith(tuple(prefixes)) for path in paths)
-
-
-def missing_required_application_files(
-    files: dict[str, str],
-    changed_sources: list[str],
-    required_exact: list[str],
-    required_prefixes: list[str],
-    required_functions: dict[str, list[str]],
-) -> list[str]:
-    """Return mandatory self-documenting outputs absent from structured content."""
-    missing = sorted(set(required_exact).difference(files))
-    for prefix in required_prefixes:
-        if not any(name.startswith(prefix) for name in files):
-            missing.append(prefix + "**")
-    for source, functions in required_functions.items():
-        candidate = files.get(source, "")
-        for function_name in functions:
-            if not has_roxygen_block(candidate, function_name):
-                missing.append(f"Roxygen for {source}:{function_name}")
-    test_text = "\n".join(
-        text
-        for name, text in files.items()
-        if any(name.startswith(prefix) for prefix in required_prefixes)
-    )
-    for functions in required_functions.values():
-        for function_name in functions:
-            if not re.search(rf"\b{re.escape(function_name)}\b", test_text):
-                missing.append(f"test coverage for {function_name}")
-    return missing
 
 
 def allowed_agent_path(name: str, patterns: list[str] | None = None) -> bool:
@@ -355,38 +306,22 @@ def request_file_contents(
     context: str,
     diff: str,
     required_application_sources: list[str] | None = None,
-    required_exact_paths: list[str] | None = None,
-    required_path_prefixes: list[str] | None = None,
     allowed_patterns: list[str] | None = None,
     required_functions: dict[str, list[str]] | None = None,
     manual_globs: list[str] | None = None,
     test_globs: list[str] | None = None,
 ) -> str:
-    application_outputs_required = required_application_sources is not None
     required_application_sources = required_application_sources or []
-    required_exact_paths = required_exact_paths or []
-    required_path_prefixes = required_path_prefixes or []
     required_functions = required_functions or {}
-    required_note = ""
-    if application_outputs_required:
-        roxygen_requirement = ""
-        if required_application_sources:
-            roxygen_requirement = f"""
-- Roxygen comments in the relevant changed R source file. Changed R sources are:
-  {', '.join(required_application_sources)}"""
-        required_note = f"""
-This PR changes application behavior. The `files` object MUST include every category below,
-even when the existing text did not become inaccurate:
-- Every exact path configured by policy: {', '.join(required_exact_paths)}
-- At least one focused file under each policy prefix: {', '.join(required_path_prefixes)}
-{roxygen_requirement}
-Do not return an empty object and do not omit a category because another check may generate it.
-
-Function coverage audit before this update:
-{existing_function_coverage(required_functions, manual_globs, test_globs)}
-
-For every listed function, return its complete R source file with an immediate Roxygen block
-and return focused tests that reference and exercise that function. Roxygen will generate man files.
+    required_note = f"""
+Audit README, NEWS, USER_GUIDE, WORKFLOW_INVENTORY, workflow-contract, Roxygen, man files,
+and focused tests against the PR diff. Change each file only when a truthful update is needed.
+An application-only visual change can require a new tutorial video without requiring prose or
+test changes. If navigation or a scripted user step changes, update workflow-contract.yml.
+Changed R sources to inspect: {', '.join(required_application_sources) or 'none'}.
+Function coverage audit: {existing_function_coverage(required_functions, manual_globs, test_globs)}
+Document and test newly added or changed functions when their behavior requires it.
+Do not return unchanged files solely to satisfy a category.
 """
     prompt = f"""You are documenting {repository}, PR #{pr_number}.
 Return ONLY a JSON object with this exact shape: {{\"files\": {{\"repository/relative/path\": \"complete replacement text\"}}}}.
@@ -396,6 +331,9 @@ The `files` object may also contain `.github/agents/workflow-contract.yml` when 
 Also include complete updated Roxygen source files or tests only when required by the PR, using their repository paths as keys.
 Do not invent features, links, videos, screenshots, or test results.
 When a user workflow changes, include the complete updated `.github/agents/workflow-contract.yml`.
+Every new workflow needs `source_paths` mapping its relevant app files, `guide_heading`,
+`stable_ids`, and a deterministic script. Scripts must navigate to
+`__TUTORIAL_BASE_URL__/` rather than a hard-coded host or port.
 Preserve every existing `VIDEO PLACEHOLDER:` comment in USER_GUIDE.md exactly unless
 `docs/playwright/artifacts/result.json` already contains verified real artifact paths.
 {required_note}
@@ -414,40 +352,11 @@ PR diff:\n{diff}\nCurrent files:\n{context}"""
         )
         if unexpected:
             raise ValueError(f"files outside documentation allow-list: {unexpected}")
-        if application_outputs_required:
-            missing = missing_required_application_files(
-                normalized,
-                required_application_sources,
-                required_exact_paths,
-                required_path_prefixes,
-                required_functions,
-            )
-            if missing:
-                raise ValueError(
-                    "required self-documenting outputs are missing: " + ", ".join(missing)
-                )
         if "USER_GUIDE.md" in normalized:
             normalized["USER_GUIDE.md"] = restore_protected_guide_blocks(
                 normalized["USER_GUIDE.md"]
             )
         patch = contents_to_patch(normalized)
-        if application_outputs_required:
-            changed = changed_paths_in_patch(patch)
-            changed_files = {
-                name: text for name, text in normalized.items() if name in changed
-            }
-            unchanged_required = missing_required_application_files(
-                changed_files,
-                required_application_sources,
-                required_exact_paths,
-                required_path_prefixes,
-                required_functions,
-            )
-            if unchanged_required:
-                raise ValueError(
-                    "required self-documenting files were returned unchanged: "
-                    + ", ".join(unchanged_required)
-                )
         return patch
     except (json.JSONDecodeError, ValueError) as error:
         raise SystemExit(f"Documentation agent returned invalid structured content: {error}") from error
@@ -548,20 +457,6 @@ def main() -> None:
     detection = policy.get("application_detection", {})
     application_prefixes = detection.get("changed_path_prefixes", ["R/", "inst/app/"])
     roxygen_prefixes = detection.get("roxygen_source_prefixes", ["R/"])
-    required_outputs = policy.get("required_application_outputs", {})
-    required_exact_paths = required_outputs.get(
-        "exact_paths",
-        [
-            "README.md",
-            "NEWS.md",
-            "USER_GUIDE.md",
-            "WORKFLOW_INVENTORY.md",
-            ".github/agents/workflow-contract.yml",
-        ],
-    )
-    required_path_prefixes = required_outputs.get(
-        "path_prefixes", ["tests/testthat/"]
-    )
     coverage = policy.get("function_coverage", {})
     manual_globs = coverage.get("manual_globs", ["man/**/*.Rd"])
     test_globs = coverage.get("test_globs", ["tests/testthat/**/*.R"])
@@ -588,8 +483,8 @@ Rules:
   4. WORKFLOW_INVENTORY.md — update user-visible workflow IDs and steps when this PR changes them.
   5. .github/agents/workflow-contract.yml — add or update the matching machine-readable
      workflow definition when user-visible steps, stable IDs, or workflows change. Each
-     workflow requires guide_heading, stable_ids, and a complete deterministic Playwright
-     `script`. Do not alter unchanged workflows.
+     workflow requires guide_heading, source_paths, stable_ids, and a complete deterministic
+     Playwright `script` using `__TUTORIAL_BASE_URL__/`. Do not alter unchanged workflows.
   6. Roxygen comments in R source files and the generated man/ files.
   7. Focused tests under tests/testthat/ that cover behavior changed by this PR.
 - Do not edit application behavior, dependencies, CI workflows, policy files other than
@@ -622,8 +517,6 @@ Rules:
             context,
             pr_diff,
             required_application_sources=application_sources,
-            required_exact_paths=required_exact_paths,
-            required_path_prefixes=required_path_prefixes,
             allowed_patterns=allowed_patterns,
             required_functions=application_functions,
             manual_globs=manual_globs,
@@ -662,8 +555,6 @@ Patch:
                     required_application_sources=(
                         application_sources if application_change else None
                     ),
-                    required_exact_paths=required_exact_paths,
-                    required_path_prefixes=required_path_prefixes,
                     allowed_patterns=allowed_patterns,
                     required_functions=application_functions,
                     manual_globs=manual_globs,
@@ -688,8 +579,6 @@ Patch:
                 required_application_sources=(
                     application_sources if application_change else None
                 ),
-                required_exact_paths=required_exact_paths,
-                required_path_prefixes=required_path_prefixes,
                 allowed_patterns=allowed_patterns,
                 required_functions=application_functions,
                 manual_globs=manual_globs,
