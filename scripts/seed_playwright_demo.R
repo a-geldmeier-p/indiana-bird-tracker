@@ -29,12 +29,10 @@ demo <- data.frame(
     "Canada Goose",
     "Blue Jay"
   ),
-  observed_at = as.POSIXct(c(
-    "2026-08-20 08:15",
-    "2026-08-21 10:30",
-    "2026-08-22 14:10",
-    "2026-08-23 17:45"
-  ), tz = "America/Indiana/Indianapolis"),
+  observed_at = as.POSIXct(
+    paste(Sys.Date() - c(4L, 3L, 2L, 1L), c("08:15", "10:30", "14:10", "17:45")),
+    tz = "America/Indiana/Indianapolis"
+  ),
   location = c(
     "Eagle Creek Park",
     "Fort Harrison State Park",
@@ -95,5 +93,8 @@ if (length(args) >= 3L && identical(args[[3]], "--serve")) {
     photo_library = photo_library,
     reference_path = reference_path
   )
-  shiny::runApp(app, host = "127.0.0.1", port = 3838, launch.browser = FALSE)
+  base_url <- Sys.getenv("TUTORIAL_BASE_URL", "http://127.0.0.1:3838")
+  port <- as.integer(sub("^http://127\\.0\\.0\\.1:", "", base_url))
+  if (is.na(port) || port < 1L || port > 65535L) stop("Invalid local TUTORIAL_BASE_URL")
+  shiny::runApp(app, host = "127.0.0.1", port = port, launch.browser = FALSE)
 }

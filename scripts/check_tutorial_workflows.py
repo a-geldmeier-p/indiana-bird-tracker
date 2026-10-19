@@ -60,10 +60,10 @@ def main() -> None:
 
     for workflow_id, workflow in workflows.items():
         script = workflow["script"]
-        if "http://127.0.0.1:3838" not in script:
-            raise SystemExit(f"Workflow {workflow_id} does not target the isolated Shiny app.")
+        if "__TUTORIAL_BASE_URL__" not in script:
+            raise SystemExit(f"Workflow {workflow_id} does not use the isolated Shiny app URL placeholder.")
         destinations = re.findall(r"page\.goto\(['\"]([^'\"]+)", script)
-        if not destinations or any(url != "http://127.0.0.1:3838/" for url in destinations):
+        if not destinations or any(url != "__TUTORIAL_BASE_URL__/" for url in destinations):
             raise SystemExit(f"Workflow {workflow_id} contains a non-local navigation target.")
         heading = f"## {workflow['guide_heading']}"
         if heading not in guide:

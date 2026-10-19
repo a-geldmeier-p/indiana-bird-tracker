@@ -20,16 +20,18 @@ PR opened or updated
   -> preflight: install R, run tests, and smoke-test Shiny
   -> document: send the PR diff and documentation context to OpenAI
   -> validate and apply the bounded patch
-  -> roxygen, R CMD check, tests, documentation checks, and Shiny smoke test
+  -> roxygen, R CMD check, documentation checks, and Shiny smoke test
+  -> select videos from contract and changed app source paths
+  -> record and publish selected tutorials through Playwright MCP
   -> commit only approved generated files and push to the PR branch
-  -> checks rerun; a human reviews and merges
+  -> a human reviews and merges
 ```
 
 ## 1. Opening or updating a PR
 
 Opening a PR, pushing another commit to its branch, or reopening it triggers the workflow. GitHub supplies the PR number; the workflow obtains the exact head branch and commit so the agent documents the code actually under review.
 
-For a forked PR, the workflow must not push to the fork. It should upload a patch artifact or ask the author to apply the changes. This protects repository secrets from untrusted fork code.
+The current `validate-pr` job rejects forked PRs; it does not generate a patch artifact for them. This prevents this write-capable workflow from proceeding on a fork.
 
 ## 2. `validate-pr`
 
@@ -37,7 +39,7 @@ This job uses GitHub's API to verify the PR and record its head branch. It does 
 
 ## 3. `preflight`
 
-`preflight` runs on the exact PR commit and is read-only. It installs R 4.4.3 and dependencies, installs the package with `R CMD INSTALL .`, runs `testthat::test_local()`, starts Shiny with temporary database/photo paths, and polls the local URL for HTTP 200.
+`preflight` runs on the PR branch and does not intentionally push changes. It installs R 4.4.3 and dependencies, installs the package with `R CMD INSTALL .`, runs `testthat::test_local()`, starts Shiny with temporary database/photo paths, and polls the local URL for HTTP 200.
 
 This answers: “Does the application work before the agent changes anything?” The `document` job has `needs: [validate-pr, preflight]`, so it cannot start unless preflight succeeds. If Shiny never returns HTTP 200, inspect the startup log for a wrong app function, port mismatch, missing dependency, or a process that exited immediately.
 
@@ -47,20 +49,20 @@ The agent receives the PR diff from `gh pr diff`, the documentation policy, the 
 
 ## 5. What the agent may update
 
-The agent must review every relevant area and may update only:
+The agent audits every relevant area and may update only:
 
 - Roxygen comments in `R/` and generated `man/` files;
 - focused tests in `tests/testthat/` when PR behavior changed;
 - `README.md`, `NEWS.md`, `USER_GUIDE.md`, and `WORKFLOW_INVENTORY.md`;
-- Playwright manifest/media links only when real artifacts exist.
+- `.github/agents/workflow-contract.yml` when the documented browser workflow changes.
+
+The deterministic video publisher, not the model, updates the Playwright manifest and media links after real artifacts are verified. An app change does not force a meaningless edit to every document or test.
 
 It may not change application behavior, dependencies, CI workflow definitions, policy files, or invent videos, links, screenshots, features, or test results. Every area is reviewed on every run, but a file changes only when the PR provides a truthful reason to change it.
 
 ## 6. Patch generation and validation
 
-The preferred response is a standard Git unified patch beginning with `diff --git`. The script removes accidental Markdown fences or `*** Begin Patch` wrappers and runs `git apply --check` before applying anything.
-
-If the first patch is malformed, the script requests a corrected patch. If that is also malformed, it requests complete replacement file contents as structured JSON and generates the unified patch locally. Git validates the locally generated patch before applying it. If both attempts fail, the job fails visibly; it does not pass while pretending documentation was updated. `git apply --whitespace=fix` removes harmless trailing blank-line whitespace while still rejecting structurally corrupt patches.
+For an application change, the agent returns structured replacement-file contents. The client generates the unified patch locally and runs `git apply --check` before applying it. For other PRs, the agent can return a patch; the client attempts repair and then structured-content fallback if needed. Invalid output fails the job visibly. `git apply --whitespace=fix` fixes harmless whitespace but not corrupt patch structure.
 
 ## 7. Allow-list and post-agent validation
 
@@ -68,15 +70,13 @@ After applying the patch, changed paths are checked against the policy. The work
 
 ## 8. Bot commit and human review
 
-Only after all post-agent checks pass does the workflow configure its bot identity, commit allow-listed files, and push to the PR branch. That new commit triggers checks again. A human reviews the bot commit and merges according to branch protection. The agent never merges.
+Only after all post-agent checks and selected recordings pass does the workflow configure its bot identity, commit allow-listed files, and push to the PR branch. A push made with the workflow's `GITHUB_TOKEN` does not normally trigger a second `pull_request` workflow run; the checks earlier in this job validate the generated files before the push. A human reviews the bot commit and merges according to branch protection. The agent never merges.
 
 ## 9. Playwright tutorial videos
 
-Playwright runs after deterministic documentation checks succeed, using a temporary Shiny instance, temporary DuckDB, synthetic rows, and temporary photo folders. It runs `catalog`, `record_sighting`, `my_sightings`, and `dashboard`, captures one video per workflow, publishes verified recordings into the guide, and also uploads videos and diagnostics as a 30-day GitHub Actions artifact.
+Playwright runs after deterministic documentation checks succeed, using a temporary Shiny instance, temporary DuckDB, synthetic rows, and temporary photo folders. The selector records a contracted workflow when its script/heading/IDs changed, its video or poster is missing, or relevant application source files changed in the PR. A changed source file not mapped by the contract conservatively selects every workflow. The number of videos is not fixed. Verified recordings and diagnostics are also uploaded as a 30-day GitHub Actions artifact.
 
-```json
-{"base_url":"http://127.0.0.1:PORT","workflows":["catalog","record_sighting","my_sightings","dashboard"],"artifact_dir":"docs/playwright/artifacts","commit_sha":"CURRENT_COMMIT"}
-```
+The contract defines each workflow's `source_paths`, `stable_ids`, heading, and scripted browser actions. `shared_source_paths` maps changes that can affect every workflow. The Action provides the PR-changed file list and one `TUTORIAL_BASE_URL`; the recorder substitutes that local URL into each selected script. The current workflow scripts are specific to this Shiny app, but the selector and recorder are reusable with another app's contract.
 
 The publisher replaces a placeholder only after a real video has been copied to `docs/playwright/artifacts/` and recorded in `result.json` and the manifest. Newly contracted workflows receive placeholders automatically until a matching recording exists. If a recording is missing, never fabricate a link.
 
@@ -92,11 +92,11 @@ The Pages workflow publishes the Markdown user guide from trusted `main`. The PR
 
 **API returns 401:** Create a new OpenAI project key and update the repository secret. Never paste the key into an issue, log, or chat.
 
-**Patch is corrupt:** Read the final `git apply` error. The script performs a repair request and structured-content fallback; do not force-apply a failed patch.
+**Patch is corrupt:** Read the final `git apply` error. Structured-file output is assembled into a patch locally; do not force-apply a failed patch.
 
 **Checks are duplicated or stuck as Expected:** Remove stale check names from branch protection and add the exact job names from the current `Self-documenting PR` workflow.
 
-**Bot cannot push:** For protected or fork branches, upload a patch artifact and ask the PR author to apply it instead of weakening protection.
+**Bot cannot push:** A fork is intentionally rejected. For a protected same-repository branch, review its rule settings or have an authorized maintainer apply the generated changes; this workflow does not currently create a patch artifact.
 
 ## Acceptance checklist
 

@@ -1,13 +1,12 @@
 # Indiana Bird Tracker
 
-A deliberately small, personal Shiny app packaged with a `{golem}`-compatible structure. It stores sightings locally in DuckDB, provides a source-documented Indiana bird catalog, shows county-level species coverage on an interactive map, and keeps the UI/workflows stable enough to support browser-tested tutorial recordings through Playwright MCP.
+A deliberately small, personal Shiny app packaged with a `{golem}`-compatible structure. It stores sightings locally in DuckDB, provides a source-documented Indiana bird catalog, and keeps the UI/workflows stable enough to support browser-tested tutorial recordings through Playwright MCP.
 
 ## What it does
 
 - Search and filter a 425-record Indiana catalog with common name, scientific name, family group, status, and a brief range description.
 - Record a sighting with species, date/time, location, county, notes, and an optional photo upload or path/URL.
 - Review total sightings, distinct species, and recent observations.
-- Explore an interactive Indiana county map shaded by the number of distinct species recorded in each county.
 
 On **My sightings**, the date filter is an on/off slider. The date-range control is shown only while the slider is enabled; selecting **Filter sightings** applies the visible controls, and **Reset filters** restores all sightings.
 
@@ -27,14 +26,14 @@ Accordingly, this is a complete snapshot of the cited DNR table, not a claim to 
 
 ## Setup and run
 
-The [hosted documentation site](https://a-geldmeier-p.github.io/indiana-bird-tracker/) includes the step-by-step user guide, generated function documentation, and release notes. Pull-request automation first updates the structured workflow contract, then fingerprints every contracted workflow. A deterministic Python client uses the official Playwright MCP server in an isolated Docker container to record only new or changed workflows, plus workflows with missing media. Verified recordings and poster images are promoted into `docs/playwright/artifacts/`; unchanged tutorials retain their existing media. The workflow count is not fixed. The guide source is [USER_GUIDE.md](USER_GUIDE.md).
+The [hosted documentation site](https://a-geldmeier-p.github.io/indiana-bird-tracker/) includes the step-by-step user guide, generated function documentation, and release notes. Pull-request automation audits the documentation first, then selects tutorials whose contract changed, whose mapped app source changed, or whose media is missing. A deterministic Python client uses the official Playwright MCP server in an isolated Docker container to record those tutorials. Verified recordings and poster images are promoted into `docs/playwright/artifacts/`; unchanged tutorials retain their existing media. New app source files without a mapping conservatively select every tutorial until a mapping is added. The workflow count is not fixed. The guide source is [USER_GUIDE.md](USER_GUIDE.md).
 
 Release notes are kept in [NEWS.md](NEWS.md). The self-documenting pull-request workflow updates allow-listed documentation and focused tests after its application preflight, selectively records stale tutorials through Playwright MCP, and publishes only verified recordings.
 
 Install the package dependencies, then install this package:
 
 ```r
-install.packages(c("golem", "shiny", "DBI", "duckdb", "leaflet", "maps", "sf", "testthat", "roxygen2"))
+install.packages(c("golem", "shiny", "DBI", "duckdb", "testthat", "roxygen2"))
 pak::local_install(".")
 ```
 
@@ -50,11 +49,10 @@ For development, use `golem::run_dev()` or source `dev/run_dev.R`. `run_app()` u
 indianabirdtracker::run_app(db_path = "data/my_birds.duckdb")
 ```
 
-On this Windows computer, the current resolved defaults are:
-
-- Package source: `C:\Users\ageldmeier\Documents\Codex\2026-08-18\indiana-bird-tracker`
-- DuckDB: `C:\Users\ageldmeier\AppData\Roaming\R\data\R\indianabirdtracker\bird_tracker.duckdb`
-- Managed photos: `C:\Users\ageldmeier\AppData\Roaming\R\data\R\indianabirdtracker\photos`
+The default DuckDB and photo locations are resolved for the current user by
+`tools::R_user_dir("indianabirdtracker", which = "data")`. To see them on your
+computer, run `indianabirdtracker::bird_db_path()` and
+`indianabirdtracker::bird_photo_library_path()` in R.
 
 The source files already exist in the package directory. The DuckDB tables and photo-library contents are created when the app first initializes. All three locations are configurable with `run_app(db_path = ..., photo_library = ..., reference_path = ...)`.
 
@@ -64,8 +62,4 @@ Database initialization is transactional and idempotent. It creates tables and i
 
 Uploaded JPEG, PNG, GIF, and WebP images are signature-checked and copied into the app-managed local library at `photos/<safe-species-name>/sighting-<id>.<ext>`. A numeric suffix prevents collisions. DuckDB stores only the relative file path, never image bytes. The library defaults beside the database and can be changed with `run_app(photo_library = ...)`. A manually entered local path or URL remains available as an alternative; arbitrary local paths are displayed as references but are not exposed through the app's web server.
 
-The **Map View** reads county and species-code values from recorded sightings. It normalizes county names for matching to the Indiana county boundaries and displays zero for counties without sightings. Hover over a county to see its distinct-species count.
-
 Run non-UI tests with `testthat::test_local()`. See [WORKFLOW_INVENTORY.md](WORKFLOW_INVENTORY.md) for the stable browser-workflow contract and the synthetic tutorial fixture used by pull-request recording.
-
-<!-- automatic documentation test -->

@@ -6,6 +6,7 @@ import argparse
 import asyncio
 import json
 from pathlib import Path
+from urllib.parse import urlparse
 
 from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
@@ -56,8 +57,9 @@ async def record(
     contract_path: Path,
     selection_path: Path,
 ) -> None:
-    if base_url != "http://127.0.0.1:3838":
-        raise ValueError("The MCP tutorial recorder is restricted to the temporary local Shiny app.")
+    parsed = urlparse(base_url)
+    if parsed.scheme != "http" or parsed.hostname != "127.0.0.1" or not parsed.port or parsed.path not in ("", "/"):
+        raise ValueError("The MCP tutorial recorder is restricted to a temporary 127.0.0.1 Shiny app.")
 
     workflows = load_contract(contract_path)
     selection = selected_ids(selection_path)
@@ -101,7 +103,7 @@ async def record(
                     await call(
                         session,
                         "browser_run_code_unsafe",
-                        {"code": workflows[workflow_id]["script"]},
+                        {"code": workflows[workflow_id]["script"].replace("__TUTORIAL_BASE_URL__", base_url.rstrip("/"))},
                     )
                     await call(
                         session,

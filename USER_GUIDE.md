@@ -2,7 +2,7 @@
 
 Indiana Bird Tracker is a local-first birding notebook. It keeps your catalog and sightings in DuckDB on your computer; it does not require a cloud account.
 
-> This Markdown guide is published through GitHub Pages. Pull-request automation fingerprints the structured workflow contract, and a deterministic Python client drives the official Playwright MCP server only for new, changed, or artifact-missing workflows. Verified recordings are promoted into the published guide, unchanged recordings are retained, and placeholders remain for workflows without verified media.
+> This Markdown guide is published through GitHub Pages. Pull-request automation fingerprints the structured workflow contract, and a deterministic Python client drives the official Playwright MCP server for new, changed, source-affected, or artifact-missing workflows. Verified recordings are promoted into the published guide, unchanged recordings are retained, and placeholders remain for workflows without verified media.
 
 ## Start the app
 
@@ -35,16 +35,6 @@ The catalog shows a user-supplied reference photo when one is available. Add fil
   </video>
   <figcaption>Browse the Indiana catalog tutorial.</figcaption>
 </figure>
-
-## View the county map
-
-1. Open **Map View**.
-2. Review the Indiana county boundaries.
-3. Counties are shaded by the number of distinct species recorded there; counties without recorded sightings remain at the lightest level.
-4. Hover over a county to see its name and unique-species count.
-5. Return to the map after saving a sighting to see the refreshed county count.
-
-The map uses county names from sightings and normalizes common variations such as a trailing “County” for matching. It counts each species once per county.
 
 ## Record a sighting
 
@@ -113,17 +103,6 @@ The DuckDB file contains catalog and sighting metadata. User-uploaded images rem
 ## Troubleshooting
 
 - **The catalog is empty:** restart the app once so the local schema and seed catalog can initialize.
-- **The map has no dark counties:** the map counts saved sightings; record a sighting with an Indiana county and refresh the map.
 - **A photo is missing:** check the filename slug and extension, then refresh the app.
 - **The browser shows an old layout:** stop and restart the Shiny app, then reload the page.
 - **You changed data locations:** pass the same `db_path`, `photo_library`, and `reference_path` values every time you launch the app.
-
-## Explore the county map
-
-<figure id="tutorial-map_view">
-  <video controls preload="metadata" poster="docs/playwright/artifacts/map_view.png" aria-label="Explore the county map tutorial">
-    <source src="docs/playwright/artifacts/map_view.webm" type="video/webm">
-    Your browser does not support embedded WebM video.
-  </video>
-  <figcaption>Explore the county map tutorial.</figcaption>
-</figure>
