@@ -49,10 +49,12 @@ For development, use `golem::run_dev()` or source `dev/run_dev.R`. `run_app()` u
 indianabirdtracker::run_app(db_path = "data/my_birds.duckdb")
 ```
 
-The default DuckDB and photo locations are resolved for the current user by
-`tools::R_user_dir("indianabirdtracker", which = "data")`. To see them on your
-computer, run `indianabirdtracker::bird_db_path()` and
-`indianabirdtracker::bird_photo_library_path()` in R.
+The lower-level `bird_db_path()` helper resolves the database beneath the current user's platform-specific application data directory. `bird_photo_library_path()` resolves a `photos` directory beside whichever database path it receives. To inspect the helper-resolved locations on your computer, run:
+
+```r
+indianabirdtracker::bird_db_path()
+indianabirdtracker::bird_photo_library_path()
+```
 
 The source files already exist in the package directory. The DuckDB tables and photo-library contents are created when the app first initializes. All three locations are configurable with `run_app(db_path = ..., photo_library = ..., reference_path = ...)`.
 

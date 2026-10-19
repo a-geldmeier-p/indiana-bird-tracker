@@ -1,6 +1,7 @@
 #' Application user interface
 #'
-#' Provides the top-level navigation for the dashboard, catalog, and sightings.
+#' Provides the top-level navigation for the dashboard, catalog, recording,
+#' and sightings workflows.
 #' @param request Internal Shiny request object.
 #' @return Shiny UI.
 #' @keywords internal
