@@ -16,7 +16,3 @@
 - Added MCP recording of the catalog, record-sighting, My Sightings, and dashboard tutorials, including verified WebM videos and PNG poster images, with videos and diagnostics uploaded as a 30-day workflow artifact.
 - Added publication of verified Playwright MCP recordings and poster images into `docs/playwright/artifacts/`, the recording manifest, and the user guide during the documentation workflow.
 - Replaced the fixed four-video recording pass with contract fingerprints: the documentation agent runs first, and Playwright MCP records only new, changed, or artifact-missing workflows while preserving unchanged media.
-
-## Future maintenance
-
-Tutorial placeholders remain until verified recordings are available. When recordings are successfully published, the workflow copies the videos and poster images into `docs/playwright/artifacts/`, records their paths and commit in the manifest, updates the corresponding user-guide sections, and commits those reviewed documentation artifacts.
