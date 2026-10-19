@@ -1,0 +1,41 @@
+{
+  "commit_sha": "df8e2cc84d43784e7162f2db0207dfd0691cc198",
+  "workflows": [
+    {
+      "workflow": "catalog",
+      "id": "catalog",
+      "video": "docs/playwright/artifacts/catalog.webm",
+      "poster": "docs/playwright/artifacts/catalog.png",
+      "commit_sha": "df8e2cc84d43784e7162f2db0207dfd0691cc198",
+      "guide_heading": "Browse the Indiana catalog",
+      "workflow_fingerprint": "a164add8bd07124f7363fec8bf04b692f8c9a8ee4c09b6c50ef6268cb700f826"
+    },
+    {
+      "workflow": "record_sighting",
+      "id": "record_sighting",
+      "video": "docs/playwright/artifacts/record_sighting.webm",
+      "poster": "docs/playwright/artifacts/record_sighting.png",
+      "commit_sha": "df8e2cc84d43784e7162f2db0207dfd0691cc198",
+      "guide_heading": "Record a sighting",
+      "workflow_fingerprint": "a6edd9cb04d3aea6e6b31195433d78598b6ad0c1853def254da1c4e6841f7ee6"
+    },
+    {
+      "workflow": "my_sightings",
+      "id": "my_sightings",
+      "video": "docs/playwright/artifacts/my_sightings.webm",
+      "poster": "docs/playwright/artifacts/my_sightings.png",
+      "commit_sha": "df8e2cc84d43784e7162f2db0207dfd0691cc198",
+      "guide_heading": "Review and filter My Sightings",
+      "workflow_fingerprint": "90ce432ef59ac58c1d35426822db9a8788b4923f5ca31e35e7d3482fb682a4c8"
+    },
+    {
+      "workflow": "dashboard",
+      "id": "dashboard",
+      "video": "docs/playwright/artifacts/dashboard.webm",
+      "poster": "docs/playwright/artifacts/dashboard.png",
+      "commit_sha": "df8e2cc84d43784e7162f2db0207dfd0691cc198",
+      "guide_heading": "View the dashboard",
+      "workflow_fingerprint": "10b6eaca28b67a1c296adf1b5e4d8fc6156a77a33fe51a0679b09b93f98d7960"
+    }
+  ]
+}

@@ -4,7 +4,7 @@
 
 - Tutorial selection now notices changed application source files, including visual-only changes, while keeping unchanged tutorials' media; shared and unmapped source changes are handled conservatively.
 - Documentation audits no longer force unrelated README, guide, contract, NEWS, and test edits for every R change.
-- Added a step-by-step `USER_GUIDE.md` suitable for GitHub Pages, with four reserved video placeholders for tutorial recordings.
+- Added a step-by-step `USER_GUIDE.md` suitable for GitHub Pages, with tutorial recording sections for the contracted workflows.
 - Added generated GitHub Pages function documentation for the package's Roxygen topics and a published News page alongside the user guide.
 - Added separate California Scrub-Jay and Woodhouse's Scrub-Jay catalog records, with a migration for older combined records.
 - Limited catalog text search to common and scientific names; bird group and Indiana status remain separate filters.
@@ -16,7 +16,7 @@
 - Replaced the Node Playwright test setup with the Python MCP client and an isolated official Playwright MCP Docker server for deterministic Chromium tutorial recording.
 - Added MCP recording of the catalog, record-sighting, My Sightings, and dashboard tutorials, including verified WebM videos and PNG poster images, with videos and diagnostics uploaded as a 30-day workflow artifact.
 - Added publication of verified Playwright MCP recordings and poster images into `docs/playwright/artifacts/`, the recording manifest, and the user guide during the documentation workflow.
-- Replaced the fixed four-video recording pass with contract fingerprints: the documentation agent runs first, and Playwright MCP records only new, changed, or artifact-missing workflows while preserving unchanged media.
+- Replaced the fixed four-video recording pass with contract fingerprints: the documentation agent runs first, and Playwright MCP records only new, changed, source-affected, or artifact-missing workflows while preserving unchanged media.
 
 ## Future maintenance
 
