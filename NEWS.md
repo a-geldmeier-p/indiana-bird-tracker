@@ -4,6 +4,7 @@
 
 - Added an interactive **Map View** tab that shades Indiana counties by the number of distinct species recorded there and provides hover counts.
 - Added a step-by-step `USER_GUIDE.md` suitable for GitHub Pages, with four reserved video placeholders for tutorial recordings.
+- Added generated GitHub Pages function documentation for the package's Roxygen topics and a published News page alongside the user guide.
 - Added separate California Scrub-Jay and Woodhouse's Scrub-Jay catalog records, with a migration for older combined records.
 - Limited catalog text search to common and scientific names; bird group and Indiana status remain separate filters.
 - Added dynamic county filtering, explicit sightings filter/reset controls, and a toggle-controlled observation date range.

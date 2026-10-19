@@ -27,7 +27,8 @@ Accordingly, this is a complete snapshot of the cited DNR table, not a claim to 
 
 ## Setup and run
 
-See the [hosted user guide](https://a-geldmeier-p.github.io/indiana-bird-tracker/) for step-by-step workflows. Pull-request automation first updates the structured workflow contract, then fingerprints every contracted workflow. A deterministic Python client uses the official Playwright MCP server in an isolated Docker container to record only new or changed workflows, plus workflows with missing media. Verified recordings and poster images are promoted into `docs/playwright/artifacts/`; unchanged tutorials retain their existing media. The workflow count is not fixed. The guide source is [USER_GUIDE.md](USER_GUIDE.md).
+The [hosted documentation site](https://a-geldmeier-p.github.io/indiana-bird-tracker/) includes the step-by-step user guide, generated function documentation, and release notes. Pull-request automation first updates the structured workflow contract, then fingerprints every contracted workflow. A deterministic Python client uses the official Playwright MCP server in an isolated Docker container to record only new or changed workflows, plus workflows with missing media. Verified recordings and poster images are promoted into `docs/playwright/artifacts/`; unchanged tutorials retain their existing media. The workflow count is not fixed. The guide source is [USER_GUIDE.md](USER_GUIDE.md).
+
 Release notes are kept in [NEWS.md](NEWS.md). The self-documenting pull-request workflow updates allow-listed documentation and focused tests after its application preflight, selectively records stale tutorials through Playwright MCP, and publishes only verified recordings.
 
 Install the package dependencies, then install this package:
