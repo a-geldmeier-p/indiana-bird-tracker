@@ -83,7 +83,7 @@ workflows:
         await page.goto('__TUTORIAL_BASE_URL__/');
         await page.getByRole('link', { name: 'Dashboard' }).click();
         await page.getByText('Total sightings').waitFor();
-        await page.getByText('Distinct species').waitFor();
+        await page.getByText('Distinct species', { exact: true }).waitFor();
         await page.locator('#dashboard-total_sightings').filter({ hasNotText: '0' }).waitFor();
         await page.getByRole('cell', { name: /Eagle Creek Park|Fort Harrison State Park|White River State Park|Monon Trail/ }).first().waitFor();
         await page.mouse.wheel(0, 700); await pause();
