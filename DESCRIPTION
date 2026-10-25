@@ -17,6 +17,9 @@ Imports:
     duckdb,
     golem,
     htmltools,
+    leaflet,
+    maps,
+    sf,
     shiny
 Collate:
     'app_config.R'
@@ -26,6 +29,7 @@ Collate:
     'species_seed.R'
     'db.R'
     'mod_dashboard.R'
+    'mod_map.R'
     'mod_species.R'
     'mod_record.R'
     'mod_sightings.R'
