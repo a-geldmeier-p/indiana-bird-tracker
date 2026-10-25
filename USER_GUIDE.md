@@ -54,6 +54,22 @@ The catalog shows a user-supplied reference photo when one is available. Add fil
   <figcaption>Record a sighting tutorial.</figcaption>
 </figure>
 
+## View the county map
+
+1. Open **Map View**.
+2. Wait for the Indiana county boundaries to render.
+3. Read the legend titled **Distinct species seen**. Darker counties have more distinct species recorded in the database.
+4. Hover over a county to see its county name and unique species count.
+5. Counties without recorded sightings remain on the map with the lightest shading.
+
+<figure id="tutorial-map">
+  <video controls preload="metadata" poster="docs/playwright/artifacts/map.png" aria-label="View the county map tutorial">
+    <source src="docs/playwright/artifacts/map.webm" type="video/webm">
+    Your browser does not support embedded WebM video.
+  </video>
+  <figcaption>View the county map tutorial.</figcaption>
+</figure>
+
 ## Review and filter My Sightings
 
 1. Open **My sightings**.
@@ -103,6 +119,7 @@ The DuckDB file contains catalog and sighting metadata. User-uploaded images rem
 ## Troubleshooting
 
 - **The catalog is empty:** restart the app once so the local schema and seed catalog can initialize.
+- **The map does not render:** stop and restart the app, then reload the page so the Leaflet dependencies and county data are initialized again.
 - **A photo is missing:** check the filename slug and extension, then refresh the app.
 - **The browser shows an old layout:** stop and restart the Shiny app, then reload the page.
 - **You changed data locations:** pass the same `db_path`, `photo_library`, and `reference_path` values every time you launch the app.

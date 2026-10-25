@@ -49,6 +49,22 @@ workflows:
         await page.getByRole('status').getByText('Saved sighting').waitFor();
         await pause();
       }
+  map:
+    guide_heading: View the county map
+    source_paths: [R/app_ui.R, R/app_server.R, R/mod_map.R]
+    stable_ids: [main-navigation, map-county_map]
+    script: |
+      async (page) => {
+        const pause = () => page.waitForTimeout(700);
+        await page.goto('__TUTORIAL_BASE_URL__/');
+        await page.getByRole('link', { name: 'Map View' }).click();
+        await page.getByRole('heading', { name: 'Indiana county birding map' }).waitFor();
+        await page.getByText('Darker counties have more distinct species.', { exact: false }).waitFor();
+        await page.locator('#map-county_map .leaflet-interactive').first().waitFor();
+        await page.getByText('Distinct species seen', { exact: true }).waitFor();
+        await pause();
+        await page.mouse.wheel(0, 500); await pause();
+      }
   my_sightings:
     guide_heading: Review and filter My Sightings
     source_paths: [R/mod_sightings.R, R/photo_library.R]

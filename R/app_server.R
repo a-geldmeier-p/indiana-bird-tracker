@@ -1,7 +1,7 @@
 #' Application server
 #'
-#' The server initializes the local database and connects the dashboard,
-#' catalog, recording, and sightings modules.
+#' The server initializes the local database and connects the dashboard, county
+#' map, catalog, recording, and sightings modules.
 #' @param input,output,session Standard Shiny server objects.
 #' @param db_path DuckDB file path.
 #' @param photo_library App-managed photo-library directory.

@@ -1,6 +1,7 @@
 #' Application user interface
 #'
-#' Provides the top-level navigation for the dashboard, catalog, and sightings.
+#' Provides the top-level navigation for the dashboard, county map, catalog,
+#' and sightings.
 #' @param request Internal Shiny request object.
 #' @return Shiny UI.
 #' @keywords internal
