@@ -1,12 +1,12 @@
 {
-  "commit_sha": "df8e2cc84d43784e7162f2db0207dfd0691cc198",
+  "commit_sha": "46310cfb7e4f6cab04bdec0b5b4807ac5be3d5fc",
   "workflows": [
     {
       "workflow": "catalog",
       "id": "catalog",
       "video": "docs/playwright/artifacts/catalog.webm",
       "poster": "docs/playwright/artifacts/catalog.png",
-      "commit_sha": "df8e2cc84d43784e7162f2db0207dfd0691cc198",
+      "commit_sha": "46310cfb7e4f6cab04bdec0b5b4807ac5be3d5fc",
       "guide_heading": "Browse the Indiana catalog",
       "workflow_fingerprint": "a164add8bd07124f7363fec8bf04b692f8c9a8ee4c09b6c50ef6268cb700f826"
     },
@@ -15,16 +15,26 @@
       "id": "record_sighting",
       "video": "docs/playwright/artifacts/record_sighting.webm",
       "poster": "docs/playwright/artifacts/record_sighting.png",
-      "commit_sha": "df8e2cc84d43784e7162f2db0207dfd0691cc198",
+      "commit_sha": "46310cfb7e4f6cab04bdec0b5b4807ac5be3d5fc",
       "guide_heading": "Record a sighting",
       "workflow_fingerprint": "a6edd9cb04d3aea6e6b31195433d78598b6ad0c1853def254da1c4e6841f7ee6"
+    },
+    {
+      "workflow": "map",
+      "id": "map",
+      "guide_heading": "View the county map",
+      "video_placeholder": "<!-- VIDEO PLACEHOLDER: View the county map (Playwright recording) -->",
+      "workflow_fingerprint": "cae5079c4ee8d0fb052541f50c8b0fb5b7bb8775ff955e70e3c0c64585226d98",
+      "video": "docs/playwright/artifacts/map.webm",
+      "poster": "docs/playwright/artifacts/map.png",
+      "commit_sha": "46310cfb7e4f6cab04bdec0b5b4807ac5be3d5fc"
     },
     {
       "workflow": "my_sightings",
       "id": "my_sightings",
       "video": "docs/playwright/artifacts/my_sightings.webm",
       "poster": "docs/playwright/artifacts/my_sightings.png",
-      "commit_sha": "df8e2cc84d43784e7162f2db0207dfd0691cc198",
+      "commit_sha": "46310cfb7e4f6cab04bdec0b5b4807ac5be3d5fc",
       "guide_heading": "Review and filter My Sightings",
       "workflow_fingerprint": "90ce432ef59ac58c1d35426822db9a8788b4923f5ca31e35e7d3482fb682a4c8"
     },
@@ -33,9 +43,9 @@
       "id": "dashboard",
       "video": "docs/playwright/artifacts/dashboard.webm",
       "poster": "docs/playwright/artifacts/dashboard.png",
-      "commit_sha": "df8e2cc84d43784e7162f2db0207dfd0691cc198",
+      "commit_sha": "46310cfb7e4f6cab04bdec0b5b4807ac5be3d5fc",
       "guide_heading": "View the dashboard",
-      "workflow_fingerprint": "10b6eaca28b67a1c296adf1b5e4d8fc6156a77a33fe51a0679b09b93f98d7960"
+      "workflow_fingerprint": "6e1813ec44f79be1ff5c2b0dfed76dae4e905402d9bf89b20667994eff2f430e"
     }
   ]
 }

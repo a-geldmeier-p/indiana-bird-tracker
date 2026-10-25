@@ -25,7 +25,15 @@ This inventory is the human-readable contract for the Playwright tutorial record
 - Select **Save sighting** (`record-save_sighting`).
 - Confirm `record-save-status` reports success; also test a missing required value and confirm an understandable error.
 
-## 3. Browse recorded sightings
+## 3. View the county map
+
+- Open **Map View** (`main-navigation`, value `map`).
+- Confirm the explanatory text says darker counties have more distinct species and that the Leaflet county polygons render in `map-county_map`.
+- Confirm the **Distinct species seen** legend is visible.
+- Confirm county hover labels report the county name and unique species count.
+- Confirm the map remains usable when some or all counties have zero recorded sightings.
+
+## 4. Browse recorded sightings
 
 - Open **My sightings** (`main-navigation`, value `sightings`).
 - Filter by **Species** and **County** (`sightings-species_code`, `sightings-county`).
@@ -35,7 +43,7 @@ This inventory is the human-readable contract for the Playwright tutorial record
 - Confirm `sightings-sighting_photos` renders the uploaded image for its linked sighting.
 - Delete or temporarily move a fixture image and confirm the graceful missing-file message appears.
 
-## 4. Review the dashboard
+## 5. Review the dashboard
 
 - Open **Dashboard** (`main-navigation`, value `dashboard`).
 - Confirm `dashboard-total-sightings` and `dashboard-distinct-species` reflect seeded test sightings.
@@ -47,7 +55,7 @@ This inventory is the human-readable contract for the Playwright tutorial record
 
 The pull-request workflow uses `scripts/seed_playwright_demo.R` with a temporary DuckDB path and temporary photo and reference-photo folders. The script seeds four synthetic sightings and synthetic SVG photo fixtures, then starts Shiny on the local workflow port. Tutorial definitions live in `.github/agents/workflow-contract.yml`. After the documentation agent updates that contract, a deterministic selector fingerprints every definition and compares it with `docs/playwright/manifest.yml`. It selects new or changed workflows, workflows whose mapped application source files changed, workflows whose video or poster is missing, and all workflows when an application source change is not mapped by the contract. The number of workflows is not fixed. Every selected workflow must produce a non-empty WebM video and PNG poster before publication; unchanged workflows retain their existing media. Verified replacements are copied into `docs/playwright/artifacts/`, recorded in the manifest and `docs/playwright/artifacts/result.json`, and embedded in the corresponding user-guide sections. Videos and diagnostics are also uploaded as a temporary 30-day workflow artifact.
 
-## 5. Repository pull-request workflows
+## 6. Repository pull-request workflows
 
 - `.github/workflows/self-documenting-pr.yml` runs automatically for pull requests that are opened, synchronized, or reopened, and can also be started with `workflow_dispatch`.
 - The workflow validates the pull request head repository, checks out the head revision, and runs an application preflight that installs the package, runs local `testthat` tests, and performs the Shiny smoke check.

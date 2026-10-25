@@ -7,6 +7,7 @@ A deliberately small, personal Shiny app packaged with a `{golem}`-compatible st
 - Search and filter a 425-record Indiana catalog with common name, scientific name, family group, status, and a brief range description.
 - Record a sighting with species, date/time, location, county, notes, and an optional photo upload or path/URL.
 - Review total sightings, distinct species, and recent observations.
+- View an Indiana county map shaded by the number of distinct species recorded in each county.
 
 On **My sightings**, the date filter is an on/off slider. The date-range control is shown only while the slider is enabled; selecting **Filter sightings** applies the visible controls, and **Reset filters** restores all sightings.
 
@@ -33,7 +34,7 @@ Release notes are kept in [NEWS.md](NEWS.md). The self-documenting pull-request 
 Install the package dependencies, then install this package:
 
 ```r
-install.packages(c("golem", "shiny", "DBI", "duckdb", "testthat", "roxygen2"))
+install.packages(c("golem", "shiny", "DBI", "duckdb", "leaflet", "maps", "sf", "testthat", "roxygen2"))
 pak::local_install(".")
 ```
 
@@ -61,5 +62,7 @@ The source files already exist in the package directory. The DuckDB tables and p
 Database initialization is transactional and idempotent. It creates tables and indexes only when needed and inserts only missing species codes, so restarting the app does not duplicate or delete data.
 
 Uploaded JPEG, PNG, GIF, and WebP images are signature-checked and copied into the app-managed local library at `photos/<safe-species-name>/sighting-<id>.<ext>`. A numeric suffix prevents collisions. DuckDB stores only the relative file path, never image bytes. The library defaults beside the database and can be changed with `run_app(photo_library = ...)`. A manually entered local path or URL remains available as an alternative; arbitrary local paths are displayed as references but are not exposed through the app's web server.
+
+The **Map View** tab builds county boundaries from the `maps` package and counts distinct species codes in the sightings table. County names are normalized for matching, and counties without sightings remain visible with a zero count. The map is local and does not require users to enter additional data.
 
 Run non-UI tests with `testthat::test_local()`. See [WORKFLOW_INVENTORY.md](WORKFLOW_INVENTORY.md) for the stable browser-workflow contract and the synthetic tutorial fixture used by pull-request recording.

@@ -2,6 +2,8 @@
 
 ## Current changes
 
+- Added a Map View tab with an Indiana county Leaflet map shaded by distinct species counts from recorded sightings.
+- Tutorial browser checks now wait for visible Leaflet county polygons and use exact text matching where explanatory text could otherwise cause ambiguous matches.
 - Tutorial selection now notices changed application source files, including visual-only changes, while keeping unchanged tutorials' media; shared and unmapped source changes are handled conservatively.
 - Documentation audits no longer force unrelated README, guide, contract, NEWS, and test edits for every R change.
 - Added a step-by-step `USER_GUIDE.md` suitable for GitHub Pages, with tutorial recording sections for the contracted workflows.

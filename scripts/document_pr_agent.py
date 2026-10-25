@@ -334,6 +334,10 @@ When a user workflow changes, include the complete updated `.github/agents/workf
 Every new workflow needs `source_paths` mapping its relevant app files, `guide_heading`,
 `stable_ids`, and a deterministic script. Scripts must navigate to
 `__TUTORIAL_BASE_URL__/` rather than a hard-coded host or port.
+Wait for visible user-facing content when checking browser steps. For Leaflet maps,
+wait for a rendered polygon such as `.leaflet-interactive`, not the zero-sized
+`.leaflet-overlay-pane` wrapper. Scope text locators or use exact matches when
+labels could also appear inside explanatory text.
 Preserve every existing `VIDEO PLACEHOLDER:` comment in USER_GUIDE.md exactly unless
 `docs/playwright/artifacts/result.json` already contains verified real artifact paths.
 {required_note}

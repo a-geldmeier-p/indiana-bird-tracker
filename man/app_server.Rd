@@ -26,7 +26,7 @@ app_server(
 Nothing; called for side effects.
 }
 \description{
-The server initializes the local database and connects the dashboard,
-catalog, recording, and sightings modules.
+The server initializes the local database and connects the dashboard, county
+map, catalog, recording, and sightings modules.
 }
 \keyword{internal}

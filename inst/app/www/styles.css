@@ -31,6 +31,9 @@ table { background:#fff; } th { color: var(--ink); }
 .photo-card { border:1px solid #d9dfd5; border-radius:10px; padding:14px; overflow:hidden; }
 .sighting-photo { width:220px; height:220px; max-width:220px; max-height:220px; object-fit:contain; border-radius:8px; background:var(--moss); display:block; }
 .photo-missing { min-height:100px; padding:24px; border:1px dashed #9aa99f; border-radius:8px; color:#5f6f67; }
+.map-panel { padding-bottom: 16px; }.map-panel h3 { margin-top: 0; }.map-help { color: #5f6f67; margin-bottom: 16px; }
+.map-panel .leaflet { background: #e7ede8; border: 1px solid #c8d3ca; border-radius: 10px; }
+.map-panel .legend { color: var(--ink); box-shadow: 0 2px 8px rgba(25,53,44,.18); border-radius: 7px; }
 @media (max-width: 700px) { .sightings-filter-row { grid-template-columns: 1fr; } }
 @media (max-width: 900px) { .catalog-filter-row { grid-template-columns: repeat(2, minmax(180px, 1fr)); }.catalog-filter-row .btn { margin-bottom: 0; } }
 @media (max-width: 900px) { .photo-grid { grid-template-columns: repeat(2,220px); } }

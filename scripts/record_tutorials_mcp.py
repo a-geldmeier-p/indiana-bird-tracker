@@ -12,6 +12,7 @@ from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
 
 from tutorial_workflows import load_contract
+from tutorial_script_safety import prepare_recording_script
 
 
 async def call(session: ClientSession, tool: str, arguments: dict):
@@ -87,6 +88,13 @@ async def record(
                 raise RuntimeError(f"Playwright MCP server lacks required tools: {sorted(missing)}")
 
             for workflow_id in selection:
+                original_script = workflows[workflow_id]["script"]
+                recording_script = prepare_recording_script(original_script)
+                if recording_script != original_script:
+                    print(
+                        f"{workflow_id}: replaced a wait on Leaflet's zero-sized "
+                        "overlay pane with a wait for a visible polygon."
+                    )
                 # The page must exist before MCP can enable cursor/action indicators.
                 await call(session, "browser_navigate", {"url": base_url})
                 await call(
@@ -103,7 +111,7 @@ async def record(
                     await call(
                         session,
                         "browser_run_code_unsafe",
-                        {"code": workflows[workflow_id]["script"].replace("__TUTORIAL_BASE_URL__", base_url.rstrip("/"))},
+                        {"code": recording_script.replace("__TUTORIAL_BASE_URL__", base_url.rstrip("/"))},
                     )
                     await call(
                         session,
