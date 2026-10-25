@@ -1,6 +1,6 @@
 normalize_county_key <- function(value) {
   value <- tolower(trimws(as.character(value)))
-  value <- sub("[[:space:]]+county$", "", value)
+  value <- sub("[-_[:space:]]+county$", "", value)
   gsub("[^a-z0-9]+", "", value)
 }
 
